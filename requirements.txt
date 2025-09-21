@@ -1,0 +1,14 @@
+# FastAPI - Web framework for building APIs
+fastapi== 0.117.1
+
+# Uvicorn - ASGI server to run FastAPI applications
+uvicorn==0.36.0
+
+# Ultralytics - YOLO object detection and computer vision tasks
+ultralytics==8.3.202
+
+# python-multipart - For handling file uploads in FastAPI
+python-multipart==0.0.20
+
+# Run app
+# uvicorn app.main:app --reload
