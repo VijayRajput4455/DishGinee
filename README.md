@@ -84,7 +84,8 @@ Dishginee/
 │   └── Veg_best.pt              # YOLO model or trained weights
 │
 ├── src/
-│   ├── food_detector.py         # Handles food detection using YOLO
+│   ├── config.py                   # Centralized configuration: model paths
+│   ├── food_detector.py            # Handles food detection using YOLO
 │   ├── recipe_details_generator.py # Generates detailed recipe steps
 │   └── recipe_names_generator.py   # Suggests recipe names from detected items
 │
