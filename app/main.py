@@ -5,7 +5,6 @@ from app.logger import get_logger
 # Initialize logger
 logger = get_logger(__name__)
 
-
 # Create FastAPI app
 app = FastAPI(
     title="DishGeniee API",
@@ -22,9 +21,7 @@ app.include_router(recipes_names.router, prefix="/recipes_names", tags=["Recipes
 # Recipe Detail Generator Endpoint
 app.include_router(recipes_details.router, prefix="/recipes_details", tags=["Recipe Details"])
 
-
 logger.info("FastAPI application initialized with all endpoints")
-
 
 # Optional: Root endpoint
 @app.get("/")

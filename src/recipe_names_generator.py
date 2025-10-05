@@ -2,15 +2,12 @@ import json
 import re
 import requests
 from app.logger import get_logger  # ✅ centralized logger
+from src.config import OLLAMA_ENDPOINT, OLLAMA_MODEL
 
 logger = get_logger(__name__)
 
-# --- Configuration ---
-OLLAMA_ENDPOINT = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.2:latest"
-
 class RecipeNameGenerator:
-    def __init__(self, model_name="llama3.2:latest"):
+    def __init__(self, model_name=OLLAMA_MODEL):
         self.model = model_name
         logger.info(f"Initialized RecipeNameGenerator with model: {self.model}")
 

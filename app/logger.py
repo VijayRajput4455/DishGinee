@@ -1,9 +1,9 @@
 import logging
 import os
+from src.config import LOG_DIR, LOG_FILE
 
-LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, "dishgenie.log")
+LOG_FILE = os.path.join(LOG_DIR, LOG_FILE)
 
 def get_logger(name: str = __name__, level=logging.INFO):
     logger = logging.getLogger(name)

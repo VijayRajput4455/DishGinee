@@ -1,11 +1,11 @@
 import os
 from ultralytics import YOLO
 from app.logger import get_logger  # ✅ import our custom logger
-
+from src.config import MODEL_PATH, CONF_THRESHOLD
 logger = get_logger(__name__)
 
 class FoodDetector:
-    def __init__(self, model_path: str = "models/Veg_best.pt"):
+    def __init__(self, model_path: str = MODEL_PATH):
         """
         Initialize YOLO model.
         Loads a custom model if available, otherwise raises error.
@@ -21,7 +21,7 @@ class FoodDetector:
         logger.info(f"✅ Loaded YOLO model from: {abs_model_path}")
         logger.debug(f"Model classes: {self.model.names}")
 
-    def detect_food(self, image_path: str, conf_threshold: float = 0.5):
+    def detect_food(self, image_path: str, conf_threshold: float = CONF_THRESHOLD):
         """
         Detect objects in a single image and return list of detected food items.
         """
@@ -47,7 +47,7 @@ class FoodDetector:
         logger.debug(f"Detections: {detected_items}")
         return detected_items
 
-    def detect_multiple(self, image_paths: list, conf_threshold: float = 0.5):
+    def detect_multiple(self, image_paths: list, conf_threshold: float = CONF_THRESHOLD):
         """
         Detect objects in multiple images.
         Returns a dict: {image_path: [labels...]}

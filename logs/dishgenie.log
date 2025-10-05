@@ -1,5 +1,0 @@
-[2025-09-21 20:48:24] [INFO] [src.food_detector] ✅ Loaded YOLO model from: C:\Users\rajpu\Desktop\Projects\DishGeniee\models\Veg_best.pt
-[2025-09-21 20:48:42] [INFO] [src.food_detector] ✅ Loaded YOLO model from: C:\Users\rajpu\Desktop\Projects\DishGeniee\models\Veg_best.pt
-[2025-09-21 20:48:43] [INFO] [src.recipe_details_generator] Initialized RecipeDetailGenerator with model: llama3.2:latest
-[2025-09-21 20:48:43] [INFO] [src.recipe_names_generator] Initialized RecipeNameGenerator with model: llama3.2:latest
-[2025-09-21 20:48:43] [INFO] [app.main] FastAPI application initialized with all endpoints

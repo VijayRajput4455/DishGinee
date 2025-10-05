@@ -4,13 +4,13 @@ import os
 from typing import List
 from src.food_detector import FoodDetector
 from app.logger import get_logger
+from src.config import UPLOAD_DIR
 
 router = APIRouter()
 logger = get_logger(__name__)
 detector = FoodDetector()
 
 # Folder to save uploaded images
-UPLOAD_DIR = "images"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/")
