@@ -7,6 +7,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.api import api_router
+from app.core.database import engine
+import app.models  # Ensure all ORM models are registered
+from app.models.base import Base
 from app.schemas import ErrorDetail, ErrorResponse
 
 app = FastAPI(
@@ -33,6 +36,16 @@ app.include_router(api_router, prefix="/api/v1")
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 if os.path.exists(frontend_dir):
     app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+
+
+@app.on_event("startup")
+def on_startup():
+    """Ensure database tables are auto-created on server startup."""
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("[Startup] Database tables initialized successfully.")
+    except Exception as e:
+        print(f"[Startup] Note: Could not auto-create database tables ({e}).")
 
 
 # Custom Exception Handler for Validation Errors

@@ -19,7 +19,6 @@ from app.schemas import (
 )
 from app.services.minio_service import MinIOService
 from app.services.rabbitmq_service import RabbitMQService
-from app.workers import CookingGuideWorker, LLMRecipeWorker, YOLOImageWorker
 
 
 class RequestService:
@@ -52,7 +51,8 @@ class RequestService:
             },
         )
 
-        # 2. Synchronous execution for immediate UI responsiveness
+        # 2. Synchronous execution for immediate UI responsiveness (lazy import to prevent circular dependency)
+        from app.workers.recipe_worker import LLMRecipeWorker
         ingredients_list = [item.strip() for item in raw_text_input.split(",") if item.strip()]
         recipe_worker = LLMRecipeWorker()
         recipe_worker.process_recipe_task(
@@ -87,7 +87,8 @@ class RequestService:
             payload={"request_id": request_obj.id, "audio_url": audio_storage_url, "cuisine": cuisine},
         )
 
-        # Synchronous execution fallback for direct UI response
+        # Synchronous execution fallback for direct UI response (lazy import to prevent circular dependency)
+        from app.workers.recipe_worker import LLMRecipeWorker
         recipe_worker = LLMRecipeWorker()
         recipe_worker.process_recipe_task(
             payload={
@@ -123,7 +124,10 @@ class RequestService:
             payload={"request_id": request_obj.id, "image_url": image_storage_url, "cuisine": cuisine},
         )
 
-        # Synchronous YOLO & LLM processing for direct UI response
+        # Synchronous YOLO & LLM processing for direct UI response (lazy import to prevent circular dependency)
+        from app.workers.image_worker import YOLOImageWorker
+        from app.workers.recipe_worker import LLMRecipeWorker
+
         image_worker = YOLOImageWorker()
         image_worker.process_image_task(
             payload={"request_id": request_obj.id, "image_url": image_storage_url},
@@ -174,7 +178,8 @@ class RequestService:
             payload={"request_id": request_id, "selected_recipe": recipe_title},
         )
 
-        # Synchronous execution of Stage 2 CookingGuideWorker for immediate UI response
+        # Synchronous execution of Stage 2 CookingGuideWorker for immediate UI response (lazy import)
+        from app.workers.cooking_guide_worker import CookingGuideWorker
         guide_worker = CookingGuideWorker()
         guide_worker.process_cooking_guide_task(
             payload={

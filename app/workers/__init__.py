@@ -1,3 +1,4 @@
+from app.workers.consumer import RabbitMQTaskConsumer
 from app.workers.cooking_guide_worker import CookingGuideWorker
 from app.workers.image_worker import YOLOImageWorker
 from app.workers.recipe_worker import LLMRecipeWorker
@@ -8,4 +9,5 @@ __all__ = [
     "WhisperVoiceWorker",
     "LLMRecipeWorker",
     "CookingGuideWorker",
+    "RabbitMQTaskConsumer",
 ]

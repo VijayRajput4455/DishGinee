@@ -490,7 +490,9 @@
 
   <script>
     let activeCuisine = 'Indian';
-    const backendUrl = 'http://localhost:8000/api/v1';
+    const backendUrl = window.location.origin.startsWith('http') 
+      ? window.location.origin + '/api/v1' 
+      : 'http://127.0.0.1:8090/api/v1';
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -553,7 +555,7 @@
           </div>
         `).join('');
       } catch (err) {
-        cardsContainer.innerHTML = '<div class="glass-card" style="grid-column:1/-1; color:#EF4444;"><p>Error connecting to FastAPI backend at http://localhost:8000</p></div>';
+        cardsContainer.innerHTML = `<div class="glass-card" style="grid-column:1/-1; color:#EF4444;"><p>Error connecting to FastAPI backend at ${backendUrl}</p></div>`;
       }
     }
 

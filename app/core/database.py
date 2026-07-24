@@ -6,11 +6,22 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
 from app.models.base import Base
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-)
+try:
+    engine = create_engine(
+        settings.DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+    )
+    # Test connection
+    with engine.connect() as conn:
+        pass
+except Exception as err:
+    print(f"[Database] PostgreSQL connection failed ({err}). Falling back to local SQLite database 'dishgenie.db'.")
+    engine = create_engine(
+        "sqlite:///dishgenie.db",
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
 
 SessionLocal = sessionmaker(
     autocommit=False,
