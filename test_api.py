@@ -1,4 +1,4 @@
-"""Unit test script to verify FastAPI endpoints using TestClient."""
+"""Unit test script to verify FastAPI endpoints using TestClient with SQLite StaticPool."""
 
 import sys
 from io import BytesIO
@@ -10,13 +10,19 @@ if sys.platform == "win32":
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
 from app.main import app
 from app.models import Base
 
-# Setup in-memory SQLite engine for API testing
-engine = create_engine("sqlite:///:memory:", echo=False)
+# Setup in-memory SQLite engine with StaticPool for thread-safe in-memory sharing
+engine = create_engine(
+    "sqlite:///:memory:",
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+    echo=False,
+)
 Base.metadata.create_all(bind=engine)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
