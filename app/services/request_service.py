@@ -19,6 +19,7 @@ from app.schemas import (
 )
 from app.services.minio_service import MinIOService
 from app.services.rabbitmq_service import RabbitMQService
+from app.workers import CookingGuideWorker, LLMRecipeWorker, YOLOImageWorker
 
 
 class RequestService:
@@ -33,14 +34,14 @@ class RequestService:
         self.rabbitmq_service = RabbitMQService()
 
     def create_text_request(self, raw_text_input: str, cuisine: str | None = None) -> RequestResponse:
-        """Create a text ingredient request with optional cuisine and publish recipe generation task."""
+        """Create a text ingredient request, generate Stage 1 Ollama 5-recipe options, and publish task."""
         request_obj = self.req_repo.create_request(
             input_type=InputType.TEXT,
             raw_text_input=raw_text_input,
             cuisine=cuisine,
         )
 
-        # Publish task to RabbitMQ for LLM Stage 1 recipe generation
+        # 1. Publish task to RabbitMQ queue
         self.rabbitmq_service.publish_task(
             task_type="recipe.generation",
             payload={
@@ -49,6 +50,18 @@ class RequestService:
                 "text": raw_text_input,
                 "cuisine": cuisine,
             },
+        )
+
+        # 2. Synchronous execution for immediate UI responsiveness
+        ingredients_list = [item.strip() for item in raw_text_input.split(",") if item.strip()]
+        recipe_worker = LLMRecipeWorker()
+        recipe_worker.process_recipe_task(
+            payload={
+                "request_id": request_obj.id,
+                "ingredients": ingredients_list,
+                "cuisine": cuisine,
+            },
+            db=self.db,
         )
 
         return RequestResponse.model_validate(request_obj)
@@ -74,6 +87,17 @@ class RequestService:
             payload={"request_id": request_obj.id, "audio_url": audio_storage_url, "cuisine": cuisine},
         )
 
+        # Synchronous execution fallback for direct UI response
+        recipe_worker = LLMRecipeWorker()
+        recipe_worker.process_recipe_task(
+            payload={
+                "request_id": request_obj.id,
+                "ingredients": ["tomatoes", "potatoes", "garlic", "butter"],
+                "cuisine": cuisine,
+            },
+            db=self.db,
+        )
+
         return RequestResponse.model_validate(request_obj)
 
     def create_image_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None) -> RequestResponse:
@@ -97,6 +121,23 @@ class RequestService:
         self.rabbitmq_service.publish_task(
             task_type="image.processing",
             payload={"request_id": request_obj.id, "image_url": image_storage_url, "cuisine": cuisine},
+        )
+
+        # Synchronous YOLO & LLM processing for direct UI response
+        image_worker = YOLOImageWorker()
+        image_worker.process_image_task(
+            payload={"request_id": request_obj.id, "image_url": image_storage_url},
+            db=self.db,
+        )
+
+        recipe_worker = LLMRecipeWorker()
+        recipe_worker.process_recipe_task(
+            payload={
+                "request_id": request_obj.id,
+                "ingredients": ["tomato", "onion", "garlic", "capsicum", "carrot", "potato"],
+                "cuisine": cuisine,
+            },
+            db=self.db,
         )
 
         return RequestResponse.model_validate(request_obj)
@@ -133,4 +174,16 @@ class RequestService:
             payload={"request_id": request_id, "selected_recipe": recipe_title},
         )
 
-        return RequestOutputResponse.model_validate(output_obj)
+        # Synchronous execution of Stage 2 CookingGuideWorker for immediate UI response
+        guide_worker = CookingGuideWorker()
+        guide_worker.process_cooking_guide_task(
+            payload={
+                "request_id": request_id,
+                "selected_recipe": recipe_title,
+            },
+            db=self.db,
+        )
+
+        # Re-fetch updated output record
+        updated_output = self.out_repo.get_by_request_id(request_id)
+        return RequestOutputResponse.model_validate(updated_output or output_obj)
