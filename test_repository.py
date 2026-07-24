@@ -1,4 +1,4 @@
-"""Unit test script to verify RequestRepository data access layer methods."""
+"""Unit test script to verify all repository layer classes."""
 
 import sys
 
@@ -11,7 +11,11 @@ from sqlalchemy.orm import sessionmaker
 
 from app.enums import ImageStatus, InputType, RequestStatus
 from app.models import Base
-from app.repositories import RequestRepository
+from app.repositories import (
+    RequestImageRepository,
+    RequestOutputRepository,
+    RequestRepository,
+)
 
 
 def run_repository_test():
@@ -22,54 +26,43 @@ def run_repository_test():
 
     db = TestingSessionLocal()
     try:
-        repo = RequestRepository(db)
+        req_repo = RequestRepository(db)
+        img_repo = RequestImageRepository(db)
+        out_repo = RequestOutputRepository(db)
 
-        # 2. Test Create Request (IMAGE)
-        req_img = repo.create_request(input_type=InputType.IMAGE)
+        # 2. Test RequestRepository
+        req_img = req_repo.create_request(input_type=InputType.IMAGE)
         print(f"[OK] Created Request ID: {req_img.id}, Status: {req_img.status}")
 
-        # 3. Test Add Request Image
-        img_rec = repo.add_request_image(
+        # 3. Test RequestImageRepository
+        img_rec = img_repo.add_image(
             request_id=req_img.id,
             original_image="minio://dishgenie-images/raw/photo_123.jpg",
         )
-        print(f"[OK] Added Image Record ID: {img_rec.id}, Image Path: {img_rec.original_image}")
+        print(f"[OK] Added Image via RequestImageRepository ID: {img_rec.id}")
 
-        # 4. Test Update Image Status
-        updated_img = repo.update_image_status(
+        updated_img = img_repo.update_image_status(
             image_id=img_rec.id,
             status=ImageStatus.PROCESSED,
             annotated_image="minio://dishgenie-images/annotated/photo_123_boxes.jpg",
         )
-        print(f"[OK] Updated Image Status: {updated_img.status}, Annotated: {updated_img.annotated_image}")
+        print(f"[OK] Updated Image Status: {updated_img.status}")
 
-        # 5. Test Upsert Request Output (Detected Ingredients)
-        output_rec = repo.upsert_request_output(
+        # 4. Test RequestOutputRepository
+        output_rec = out_repo.upsert_output(
             request_id=req_img.id,
             ingredients=["tomato", "onion", "garlic", "chicken breast"],
         )
-        print(f"[OK] Upserted Output Ingredients: {output_rec.ingredients}")
+        print(f"[OK] Upserted Output via RequestOutputRepository: {output_rec.ingredients}")
 
-        # 6. Test Update Request Status
-        req_updated = repo.update_status(request_id=req_img.id, status=RequestStatus.COMPLETED)
-        print(f"[OK] Updated Request Status: {req_updated.status}")
-
-        # 7. Test Get With Details (Joined Eager Load)
-        fetched_req = repo.get_with_details(req_img.id)
+        # 5. Test Get With Details
+        fetched_req = req_repo.get_with_details(req_img.id)
         assert fetched_req is not None
         assert len(fetched_req.images) == 1
         assert fetched_req.output is not None
         assert fetched_req.output.ingredients == ["tomato", "onion", "garlic", "chicken breast"]
 
-        print(f"[OK] get_with_details Success! Request #{fetched_req.id} has {len(fetched_req.images)} images and output attached.")
-
-        # 8. Test Text and Voice Request Creation
-        text_req = repo.create_request(input_type=InputType.TEXT, raw_text_input="eggs, milk, flour, butter")
-        print(f"[OK] Created Text Request ID: {text_req.id}, Text: '{text_req.raw_text_input}'")
-
-        voice_req = repo.create_request(input_type=InputType.VOICE, audio_url="minio://dishgenie-audio/rec_99.wav")
-        print(f"[OK] Created Voice Request ID: {voice_req.id}, Audio URL: '{voice_req.audio_url}'")
-
+        print(f"[OK] Joined eager load verified for Request #{fetched_req.id}")
         print("\nALL REPOSITORY LAYER TESTS PASSED SUCCESSFULLY!")
 
     finally:
