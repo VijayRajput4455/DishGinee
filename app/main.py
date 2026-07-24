@@ -1,8 +1,10 @@
+import os
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.api import api_router
 from app.schemas import ErrorDetail, ErrorResponse
@@ -26,6 +28,11 @@ app.add_middleware(
 
 # Register API v1 Routers
 app.include_router(api_router, prefix="/api/v1")
+
+# Mount Static Files for Frontend UI
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+if os.path.exists(frontend_dir):
+    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 
 # Custom Exception Handler for Validation Errors
@@ -61,7 +68,10 @@ def health_check():
 
 @app.get("/", tags=["Root"])
 def root():
-    """Root welcome endpoint redirecting to interactive documentation."""
+    """Root welcome endpoint serving DishGenie Web UI console."""
+    index_file = os.path.join(frontend_dir, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
     return {
         "message": "Welcome to DishGenie API! Access API documentation at /docs",
     }

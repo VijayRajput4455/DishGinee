@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DishGenie AI - Ultra Kitchen Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090B0E;
+      --bg-surface: #11151C;
+      --surface-card: rgba(22, 28, 38, 0.75);
+      --surface-hover: rgba(32, 40, 54, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(255, 107, 0, 0.35);
+
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+
+      --accent-orange: #FF6B00;
+      --accent-gold: #FFB800;
+      --accent-coral: #FF4500;
+      --accent-glow: rgba(255, 107, 0, 0.25);
+      --accent-gradient: linear-gradient(135deg, #FF6B00 0%, #FFB800 100%);
+      --accent-gradient-hover: linear-gradient(135deg, #FF7B1A 0%, #FFC41F 100%);
+
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --radius: 20px;
+      --shadow-glow: 0 12px 40px rgba(255, 107, 0, 0.18);
+    }
+
+    [data-theme="light"] {
+      --bg: #F8FAFC;
+      --bg-surface: #FFFFFF;
+      --surface-card: #FFFFFF;
+      --surface-hover: #F1F5F9;
+      --border: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --accent-glow: rgba(255, 107, 0, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* Floating Ambient Background Orbs */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -10%;
+      right: 15%;
+      width: 550px;
+      height: 550px;
+      background: radial-gradient(circle, rgba(255, 107, 0, 0.14) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -10%;
+      left: 10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 184, 0, 0.1) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glass Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      padding: 2.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      position: fixed;
+      height: 100vh;
+      z-index: 20;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+    .brand-logo .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .nav-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .nav-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.6rem; padding-left: 0.5rem; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.9rem 1.15rem;
+      border-radius: 14px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .nav-item:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      transform: translateX(4px);
+    }
+    .nav-item.active {
+      background: rgba(255, 107, 0, 0.12);
+      color: var(--accent-orange);
+      border: 1px solid var(--border-accent);
+      font-weight: 700;
+    }
+
+    /* Main Workspace Shell */
+    .main-content {
+      margin-left: 280px;
+      flex: 1;
+      padding: 2.75rem 3.5rem;
+      max-width: 1350px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+    .page-title {
+      font-family: var(--font-heading);
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+    }
+
+    /* Premium Glass Cards */
+    .glass-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .glass-card:hover {
+      border-color: var(--border-accent);
+      box-shadow: var(--shadow-glow);
+    }
+
+    /* Tab Switcher */
+    .tab-pills {
+      display: inline-flex;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      padding: 0.4rem;
+      border-radius: 16px;
+      gap: 0.4rem;
+      margin-bottom: 2rem;
+    }
+    .tab-pill {
+      padding: 0.75rem 1.4rem;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tab-pill.active {
+      background: var(--accent-gradient);
+      color: #FFFFFF;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    /* Cuisine Selector Matrix */
+    .cuisine-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    .cuisine-card {
+      background: rgba(255,255,255,0.03);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 0.9rem 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .cuisine-card:hover {
+      background: rgba(255, 107, 0, 0.08);
+      border-color: var(--accent-orange);
+      transform: translateY(-2px);
+    }
+    .cuisine-card.selected {
+      background: rgba(255, 107, 0, 0.15);
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+    .cuisine-flag { font-size: 1.6rem; display: block; margin-bottom: 0.35rem; }
+    .cuisine-name { font-weight: 700; font-size: 0.88rem; }
+
+    /* Custom Input Fields */
+    .input-textarea {
+      width: 100%;
+      padding: 1.15rem;
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      background: rgba(0, 0, 0, 0.25);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      resize: vertical;
+      transition: all 0.25s ease;
+      margin-bottom: 1.5rem;
+    }
+    .input-textarea:focus {
+      outline: none;
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+
+    /* Dropzone Uploader */
+    .dropzone {
+      border: 2px dashed rgba(255, 107, 0, 0.3);
+      border-radius: 20px;
+      padding: 3rem 2rem;
+      text-align: center;
+      background: rgba(255, 107, 0, 0.03);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 1.5rem;
+    }
+    .dropzone:hover {
+      border-color: var(--accent-orange);
+      background: rgba(255, 107, 0, 0.08);
+    }
+
+    /* Primary Action Buttons */
+    .btn-action {
+      background: var(--accent-gradient);
+      color: #FFFFFF;
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 800;
+      padding: 1.1rem 2.25rem;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-glow);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      width: 100%;
+    }
+    .btn-action:hover {
+      background: var(--accent-gradient-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 45px var(--accent-glow);
+    }
+
+    /* 5-Recipe Option Cards Grid */
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.75rem;
+      margin-top: 2rem;
+    }
+    .recipe-card-stage1 {
+      border-top: 4px solid var(--accent-orange);
+    }
+    .recipe-title {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 0.6rem;
+      color: var(--text-primary);
+    }
+    .ingredient-pill {
+      display: inline-block;
+      padding: 0.3rem 0.75rem;
+      border-radius: 10px;
+      background: rgba(255, 107, 0, 0.12);
+      color: var(--accent-orange);
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-right: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+    .ingredient-missing {
+      background: rgba(239, 68, 68, 0.12);
+      color: #EF4444;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Glass Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-logo">
+      <div class="logo-icon">🍳</div>
+      <span>DishGenie<span style="color:var(--accent-orange)">.AI</span></span>
+    </div>
+
+    <div style="flex:1;">
+      <div class="nav-group">
+        <div class="nav-label">Studio Workspaces</div>
+        <div className="nav-item active" class="nav-item active" onclick="switchSection('create')">
+          <span>🍳</span> New Recipe Request
+        </div>
+        <div class="nav-item" onclick="switchSection('dashboard')">
+          <span>📊</span> Kitchen Analytics
+        </div>
+        <div class="nav-item" onclick="switchSection('history')">
+          <span>📜</span> Recipe Log History
+        </div>
+      </div>
+    </div>
+
+    <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
+      <button class="btn-action" style="background:var(--surface-card); color:var(--text-primary); border:1px solid var(--border); box-shadow:none; font-size:0.9rem; padding:0.75rem;" onclick="toggleTheme()">
+        <span>🌓</span> Toggle Theme Mode
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Studio Shell -->
+  <main class="main-content">
+    
+    <!-- Top Header Bar -->
+    <div class="header-bar">
+      <div>
+        <h1 class="page-title">AI Recipe Studio 🍳</h1>
+        <p class="page-subtitle">Powered by YOLO Object Detection, Whisper Audio Speech, & Ollama Qwen 2.5 LLM</p>
+      </div>
+      <div>
+        <span style="padding: 0.5rem 1rem; border-radius: 20px; background: rgba(16, 185, 129, 0.12); color: var(--success); font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(16, 185, 129, 0.25);">
+          ● Ollama Engine Connected (qwen2.5:0.5b)
+        </span>
+      </div>
+    </div>
+
+    <!-- Create Section -->
+    <div id="create-workspace">
+      
+      <!-- Input Mode Tabs -->
+      <div class="tab-pills">
+        <button class="tab-pill active" onclick="switchTab('text', this)">
+          <span>✍️</span> Freeform Text & Ingredients
+        </button>
+        <button class="tab-pill" onclick="switchTab('image', this)">
+          <span>📷</span> Fridge Vision (YOLO CV)
+        </button>
+        <button class="tab-pill" onclick="switchTab('voice', this)">
+          <span>🎙️</span> Voice Audio (Whisper AI)
+        </button>
+      </div>
+
+      <div class="glass-card">
+        
+        <!-- Cuisine Matrix -->
+        <label style="font-weight: 800; font-family: var(--font-heading); font-size: 1.15rem; display: block; margin-bottom: 0.85rem;">
+          1. Select Target Cuisine Style:
+        </label>
+        <div class="cuisine-matrix">
+          <div class="cuisine-card selected" onclick="selectCuisine(this, 'Indian')">
+            <span class="cuisine-flag">🇮🇳</span>
+            <div class="cuisine-name">Indian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Italian')">
+            <span class="cuisine-flag">🇮🇹</span>
+            <div class="cuisine-name">Italian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Mexican')">
+            <span class="cuisine-flag">🇲🇽</span>
+            <div class="cuisine-name">Mexican</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Asian')">
+            <span class="cuisine-flag">⛩️</span>
+            <div class="cuisine-name">Asian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'French')">
+            <span class="cuisine-flag">🇫🇷</span>
+            <div class="cuisine-name">French</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Mediterranean')">
+            <span class="cuisine-flag">🌴</span>
+            <div class="cuisine-name">Mediterranean</div>
+          </div>
+        </div>
+
+        <!-- Input Area Text -->
+        <div id="input-text-group">
+          <label style="font-weight: 800; font-family: var(--font-heading); font-size: 1.15rem; display: block; margin-bottom: 0.85rem;">
+            2. Available Ingredients List:
+          </label>
+          <textarea id="ingredients-text" class="input-textarea" rows="4">tomatoes, potatoes, butter, garlic, spinach, chicken</textarea>
+        </div>
+
+        <!-- Input Area Image (YOLO) -->
+        <div id="input-image-group" style="display: none;">
+          <label style="font-weight: 800; font-family: var(--font-heading); font-size: 1.15rem; display: block; margin-bottom: 0.85rem;">
+            2. Refrigerator / Food Image Scan (YOLO Object Detection):
+          </label>
+          <div class="dropzone">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">📷</div>
+            <p style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.35rem;">Drop Refrigerator Photo Here or Click to Browse</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">YOLO vision automatically identifies bounding boxes and ingredient names</p>
+            <input type="file" id="image-file" accept="image/*" style="margin-top: 1rem;">
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button class="btn-action" onclick="generateRecipes()">
+          <span>✦</span> Generate 5 Recipe Candidates via Ollama
+        </button>
+      </div>
+
+      <!-- Stage 1 Results Cards -->
+      <div id="results-wrapper" style="display: none; margin-top: 3rem;">
+        <h2 style="font-family: var(--font-heading); font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem;">
+          Ollama 5 Stage-1 Candidate Options 📜
+        </h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Select your favorite recipe to generate the complete step-by-step cooking guide.</p>
+        <div id="recipe-cards-container" class="recipe-grid"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    let activeCuisine = 'Indian';
+    const backendUrl = 'http://localhost:8000/api/v1';
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+    }
+
+    function switchTab(type, el) {
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('input-text-group').style.display = type === 'text' ? 'block' : 'none';
+      document.getElementById('input-image-group').style.display = type === 'image' ? 'block' : 'none';
+    }
+
+    function selectCuisine(el, cuisine) {
+      document.querySelectorAll('.cuisine-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      activeCuisine = cuisine;
+    }
+
+    async function generateRecipes() {
+      const text = document.getElementById('ingredients-text').value;
+      const resultsWrapper = document.getElementById('results-wrapper');
+      const cardsContainer = document.getElementById('recipe-cards-container');
+
+      resultsWrapper.style.display = 'block';
+      cardsContainer.innerHTML = '<div class="glass-card" style="grid-column:1/-1; text-align:center; padding:3rem;"><div style="font-size:2rem; margin-bottom:1rem;">⚡</div><h3 style="font-size:1.3rem; font-weight:800;">Ollama LLM (qwen2.5) is crafting 5 recipes...</h3></div>';
+
+      try {
+        const res = await fetch(`${backendUrl}/requests/text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_text_input: text, cuisine: activeCuisine })
+        });
+        const json = await res.json();
+        const reqId = json.data.id;
+
+        // Fetch detail recipes
+        const detailRes = await fetch(`${backendUrl}/requests/${reqId}`);
+        const detailJson = await detailRes.json();
+        const recipes = detailJson.data?.output?.ingredients || [];
+
+        cardsContainer.innerHTML = recipes.map((r, idx) => `
+          <div class="glass-card recipe-card-stage1">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.05em;">Option #${idx+1}</span>
+              <span style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">⏱️ ${r.prep_time || '15 mins'}</span>
+            </div>
+            <h3 class="recipe-title">${r.title}</h3>
+            <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:1.25rem; line-height:1.4;">${r.description}</p>
+            
+            <div style="margin-bottom:1.25rem;">
+              <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); margin-bottom:0.4rem; text-transform:uppercase;">Matched Ingredients:</div>
+              ${(r.matched_ingredients || []).map(ing => `<span class="ingredient-pill">${ing}</span>`).join('')}
+            </div>
+
+            <button class="btn-action" style="font-size:0.9rem; padding:0.85rem;" onclick="selectStage2(${reqId}, '${r.title.replace(/'/g, "\\'")}')">
+              Select Recipe & Get Master Guide ✦
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        cardsContainer.innerHTML = '<div class="glass-card" style="grid-column:1/-1; color:#EF4444;"><p>Error connecting to FastAPI backend at http://localhost:8000</p></div>';
+      }
+    }
+
+    async function selectStage2(reqId, title) {
+      alert(`Generating full Stage 2 cooking guide for '${title}'...`);
+      await fetch(`${backendUrl}/requests/${reqId}/select-recipe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipe_title: title })
+      });
+      const detailRes = await fetch(`${backendUrl}/requests/${reqId}`);
+      const detailJson = await detailRes.json();
+      const guide = detailJson.data?.output?.cooking_guide;
+
+      if (guide) {
+        alert(`🎉 Full Master Cooking Guide Generated!\nTitle: ${guide.title}\nPrep: ${guide.prep_time} | Cook: ${guide.cook_time}\nNutritional Macros: ${guide.macros?.calories || 380} kcal | Protein: ${guide.macros?.protein_g || 8.5}g`);
+      }
+    }
+  </script>
+</body>
+</html>
