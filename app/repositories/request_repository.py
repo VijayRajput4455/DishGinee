@@ -31,13 +31,15 @@ class RequestRepository(BaseRepository[Request]):
         input_type: InputType,
         raw_text_input: str | None = None,
         audio_url: str | None = None,
+        cuisine: str | None = None,
     ) -> Request:
-        """Create and persist a new user request."""
+        """Create and persist a new user request with optional cuisine preference."""
         request_obj = Request(
             input_type=input_type,
             status=RequestStatus.PENDING,
             raw_text_input=raw_text_input,
             audio_url=audio_url,
+            cuisine=cuisine,
         )
         return self.create(request_obj)
 

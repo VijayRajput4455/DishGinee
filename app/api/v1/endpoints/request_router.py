@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -20,14 +20,14 @@ router = APIRouter(prefix="/requests", tags=["Requests"])
     response_model=APIResponse[RequestResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Submit Text Ingredients",
-    description="Submit a text ingredient list to generate recipe suggestions.",
+    description="Submit a text ingredient list with an optional cuisine preference to generate 5 recipe options.",
 )
 def create_text_request(
     payload: RequestCreateText,
     db: Session = Depends(get_db),
 ):
     service = RequestService(db)
-    result = service.create_text_request(raw_text_input=payload.raw_text_input)
+    result = service.create_text_request(raw_text_input=payload.raw_text_input, cuisine=payload.cuisine)
     return APIResponse(
         success=True,
         message="Text request created successfully. Recipe generation task queued.",
@@ -40,10 +40,11 @@ def create_text_request(
     response_model=APIResponse[RequestResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Upload Refrigerator/Food Image",
-    description="Upload an image file to detect ingredients using YOLO computer vision.",
+    description="Upload an image file and optional cuisine preference to detect ingredients using YOLO and generate recipes.",
 )
 def create_image_request(
     file: UploadFile,
+    cuisine: str | None = Form(default=None, description="Optional cuisine preference (e.g. Indian, Italian, Mexican, Asian)"),
     db: Session = Depends(get_db),
 ):
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -60,7 +61,11 @@ def create_image_request(
         )
 
     service = RequestService(db)
-    result = service.create_image_request(file_bytes=file_bytes, filename=file.filename or "image.jpg")
+    result = service.create_image_request(
+        file_bytes=file_bytes,
+        filename=file.filename or "image.jpg",
+        cuisine=cuisine,
+    )
     return APIResponse(
         success=True,
         message="Image request created successfully. Image processing task queued.",
@@ -73,10 +78,11 @@ def create_image_request(
     response_model=APIResponse[RequestResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Upload Voice Audio Recording",
-    description="Upload a voice recording file to transcribe ingredients using Whisper AI.",
+    description="Upload a voice recording file and optional cuisine preference to transcribe ingredients using Whisper AI.",
 )
 def create_voice_request(
     file: UploadFile,
+    cuisine: str | None = Form(default=None, description="Optional cuisine preference (e.g. Indian, Italian, Mexican, Asian)"),
     db: Session = Depends(get_db),
 ):
     file_bytes = file.file.read()
@@ -87,7 +93,11 @@ def create_voice_request(
         )
 
     service = RequestService(db)
-    result = service.create_voice_request(file_bytes=file_bytes, filename=file.filename or "audio.wav")
+    result = service.create_voice_request(
+        file_bytes=file_bytes,
+        filename=file.filename or "audio.wav",
+        cuisine=cuisine,
+    )
     return APIResponse(
         success=True,
         message="Voice request created successfully. Transcription task queued.",

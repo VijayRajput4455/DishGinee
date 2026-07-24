@@ -37,7 +37,10 @@ env/
 *.sqlite
 *.db
 
-# ML models / weights (store large files in LFS or cloud storage)
+# Image test outputs & ML models / weights
+*.jpg
+*.jpeg
+*.png
 *.pt
 *.onnx
 *.safetensors

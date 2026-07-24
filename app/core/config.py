@@ -19,7 +19,11 @@ class Settings(BaseSettings):
     RABBITMQ_PASSWORD: str = "guest"
     RABBITMQ_QUEUE_NAME: str = "dishgenie_tasks"
 
-    # LLM Settings
+    # Ollama Local LLM Settings
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3"
+
+    # Cloud LLM Fallback Settings
     OPENAI_API_KEY: str = ""
     LLM_MODEL: str = "gpt-4o-mini"
 

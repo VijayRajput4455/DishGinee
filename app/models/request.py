@@ -19,6 +19,11 @@ class Request(BaseModel):
         nullable=False,
     )
 
+    cuisine: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
     # Optional fields based on input_type (TEXT / VOICE)
     raw_text_input: Mapped[str | None] = mapped_column(
         Text,
