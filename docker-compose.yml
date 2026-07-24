@@ -74,7 +74,17 @@ services:
       exit 0;
       "
 
-  # 5. FastAPI Application Service
+  # 5. Ollama Local LLM Engine Service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dishgenie_ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # 6. FastAPI Application Service
   app:
     build:
       context: .
@@ -93,6 +103,8 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       RABBITMQ_QUEUE_NAME: ${RABBITMQ_QUEUE_NAME:-dishgenie_tasks}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-""}
     ports:
       - "8000:8000"
@@ -105,8 +117,11 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      ollama:
+        condition: service_started
 
 volumes:
   postgres_data:
   rabbitmq_data:
   minio_data:
+  ollama_data:

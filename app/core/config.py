@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Ollama Local LLM Settings
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3"
+    OLLAMA_MODEL: str = "qwen2.5:0.5b"
 
     # Cloud LLM Fallback Settings
     OPENAI_API_KEY: str = ""
