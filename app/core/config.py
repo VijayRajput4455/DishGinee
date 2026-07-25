@@ -27,6 +27,17 @@ class Settings(BaseSettings):
     LOG_DIR: str = "logs"
     LOG_FILE: str = "dishgenie.log"
 
+    # Redis Cache Settings
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str | None = None
+    REDIS_DEFAULT_TTL_SECONDS: int = 600
+
+    # Rate Limiting Settings
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 30
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+
     # Ollama Local LLM Settings
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "qwen2.5:0.5b"

@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.logger import get_logger
+from app.core.metrics import increment_cache_metrics
 from app.enums import ImageStatus, InputType, RequestStatus
 from app.repositories import (
     RequestImageRepository,
@@ -20,6 +21,7 @@ from app.schemas import (
 )
 from app.services.minio_service import MinIOService
 from app.services.rabbitmq_service import RabbitMQService
+from app.services.redis_cache import get_redis_cache
 
 logger = get_logger(__name__)
 
@@ -158,7 +160,19 @@ class RequestService:
         return RequestResponse.model_validate(request_obj)
 
     def get_request_details(self, request_id: int) -> RequestDetailResponse | None:
-        """Fetch request details with presigned URLs for image rendering."""
+        """Fetch request details with Redis caching and presigned URL resolution."""
+        cache_key = f"request:details:{request_id}"
+        redis_cache = get_redis_cache()
+
+        cached_data = redis_cache.get_json(cache_key)
+        if cached_data and isinstance(cached_data, dict):
+            try:
+                increment_cache_metrics(hit=True)
+                return RequestDetailResponse.model_validate(cached_data)
+            except Exception:
+                pass
+
+        increment_cache_metrics(hit=False)
         request_obj = self.req_repo.get_with_details(request_id)
         if request_obj is None:
             return None
@@ -172,10 +186,15 @@ class RequestService:
             if img.annotated_image:
                 img.annotated_image = self.minio_service.get_presigned_url(img.annotated_image)
 
+        # Cache response model in Redis (TTL 30 minutes)
+        redis_cache.set_json(cache_key, response.model_dump(mode="json"), ttl_seconds=1800)
         return response
 
     def select_recipe(self, request_id: int, recipe_title: str) -> RequestOutputResponse:
         """Select a recipe option and trigger LLM Stage 2 Cooking Guide generation."""
+        # Invalidate details cache for this request
+        get_redis_cache().delete(f"request:details:{request_id}")
+
         # Update output with selected recipe choice
         selected_payload = {"title": recipe_title}
         output_obj = self.out_repo.upsert_output(

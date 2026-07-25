@@ -1189,6 +1189,12 @@
           <span>🌓</span>
         </div>
 
+        <!-- Live Worker Status Pill -->
+        <div class="quote-pill" id="worker-status-pill" title="Live RabbitMQ Task Worker Status" style="display:flex; align-items:center; gap:0.4rem; border-color:rgba(16,185,129,0.4);">
+          <span id="worker-status-dot" style="width:8px; height:8px; border-radius:50%; background:#10B981; display:inline-block;"></span>
+          <span id="worker-status-text" style="font-weight:700; font-size:0.75rem;">Worker Active</span>
+        </div>
+
         <!-- Cooking Quote Banner -->
         <div class="quote-pill">
           <span>✦</span> "Cooking is love made visible." ❤️
@@ -2888,6 +2894,42 @@
       `;
       pollForStage1(id);
     }
+
+    async function pollWorkerStatus() {
+      try {
+        const res = await fetch('/api/v1/worker/status');
+        if (res.ok) {
+          const data = await res.json();
+          const dot = document.getElementById('worker-status-dot');
+          const text = document.getElementById('worker-status-text');
+          const pill = document.getElementById('worker-status-pill');
+          if (dot && text) {
+            if (data.connected && data.state === 'consuming') {
+              dot.style.background = '#10B981';
+              text.innerText = 'Worker Active';
+              if (pill) pill.style.borderColor = 'rgba(16,185,129,0.4)';
+            } else if (data.state === 'reconnecting' || data.state === 'starting') {
+              dot.style.background = '#F59E0B';
+              text.innerText = 'Worker Reconnecting';
+              if (pill) pill.style.borderColor = 'rgba(245,158,11,0.4)';
+            } else {
+              dot.style.background = '#EF4444';
+              text.innerText = 'Worker Disconnected';
+              if (pill) pill.style.borderColor = 'rgba(239,68,68,0.4)';
+            }
+          }
+        }
+      } catch (err) {
+        const dot = document.getElementById('worker-status-dot');
+        const text = document.getElementById('worker-status-text');
+        if (dot && text) {
+          dot.style.background = '#EF4444';
+          text.innerText = 'Worker Offline';
+        }
+      }
+    }
+    setInterval(pollWorkerStatus, 5000);
+    pollWorkerStatus();
   </script>
 </body>
 </html>

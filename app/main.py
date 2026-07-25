@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, Request, status
+import time
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,8 @@ from app.core.config import settings
 from app.core.context import set_request_id
 from app.core.database import Base, engine, get_database_status
 from app.core.logger import get_logger, setup_logging
+from app.core.metrics import metrics_endpoint, track_requests
+from app.core.rate_limiter import rate_limit_middleware
 import app.models  # Ensure all ORM models are registered
 from app.schemas import ErrorDetail, ErrorResponse
 from app.workers.consumer import get_worker_runtime_status, start_worker_in_background
@@ -47,6 +50,74 @@ async def request_id_middleware(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def metrics_and_rate_limit_middleware(request: Request, call_next):
+    """Track request duration metrics and enforce IP rate limits."""
+    start_time = time.time()
+    try:
+        # Check rate limits
+        response = await rate_limit_middleware(request, call_next)
+        process_time = time.time() - start_time
+        track_requests(request, response, process_time)
+        return response
+    except HTTPException as exc:
+        process_time = time.time() - start_time
+        track_requests(request, exc, process_time)
+        raise exc
+
+
+# Exception Handlers
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code >= 500:
+        logger.error("HTTPException %s %s: %s", exc.status_code, request.url.path, exc.detail)
+    elif exc.status_code >= 400:
+        logger.warning("HTTPException %s %s: %s", exc.status_code, request.url.path, exc.detail)
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            success=False,
+            error=str(exc.detail),
+            details=None,
+        ).model_dump(mode="json"),
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    details = [
+        ErrorDetail(
+            field=" -> ".join([str(loc) for loc in err["loc"]]),
+            message=err["msg"],
+        )
+        for err in exc.errors()
+    ]
+    logger.warning("Validation error on %s %s: %s", request.method, request.url.path, details)
+    error_payload = ErrorResponse(
+        success=False,
+        error="VALIDATION_ERROR",
+        details=details,
+    )
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder(error_payload),
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled error on %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=ErrorResponse(
+            success=False,
+            error="INTERNAL_SERVER_ERROR",
+            details=[ErrorDetail(field="server", message="An unexpected server error occurred.")],
+        ).model_dump(mode="json"),
+    )
+
+
 # Register API v1 Routers
 app.include_router(api_router, prefix="/api/v1")
 
@@ -79,26 +150,10 @@ def on_startup():
             logger.info("Embedded background RabbitMQ task worker is already running.")
 
 
-# Custom Exception Handler for Validation Errors
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    details = [
-        ErrorDetail(
-            field=" -> ".join([str(loc) for loc in err["loc"]]),
-            message=err["msg"],
-        )
-        for err in exc.errors()
-    ]
-    logger.warning("Validation error on %s %s: %s", request.method, request.url, details)
-    error_payload = ErrorResponse(
-        success=False,
-        error="VALIDATION_ERROR",
-        details=details,
-    )
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder(error_payload),
-    )
+@app.get("/metrics", tags=["Metrics"])
+async def get_metrics(request: Request):
+    """Prometheus metrics scrape endpoint for monitoring dashboards."""
+    return await metrics_endpoint(request)
 
 
 @app.get("/health", tags=["Health"])
