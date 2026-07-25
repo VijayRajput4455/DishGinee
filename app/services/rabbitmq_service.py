@@ -2,6 +2,10 @@ import json
 from typing import Any
 
 from app.core.config import settings
+from app.core.context import get_request_id
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class RabbitMQService:
@@ -16,6 +20,10 @@ class RabbitMQService:
 
     def publish_task(self, task_type: str, payload: dict[str, Any]) -> bool:
         """Publish a JSON task payload to the RabbitMQ queue."""
+        # Ensure context request_id is present in payload
+        if "request_id" not in payload and get_request_id() != "-":
+            payload["request_id"] = get_request_id()
+
         message = {
             "task_type": task_type,
             "payload": payload,
@@ -51,12 +59,12 @@ class RabbitMQService:
             )
 
             connection.close()
-            print(f"[RabbitMQService] Published task '{task_type}' for Request #{payload.get('request_id')}")
+            logger.info("Published task '%s' for Request #%s", task_type, payload.get("request_id"))
             return True
 
         except ImportError:
-            print(f"[RabbitMQService] Info: Pika package not loaded. Task '{task_type}' logged locally: {message}")
+            logger.info("Pika package not loaded. Task '%s' logged locally: %s", task_type, message)
             return False
         except Exception as e:
-            print(f"[RabbitMQService] Warning: Could not publish task to RabbitMQ ({e}). Task: {message}")
+            logger.warning("Could not publish task '%s' to RabbitMQ (%s). Payload: %s", task_type, e, message)
             return False

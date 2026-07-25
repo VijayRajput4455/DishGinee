@@ -1,0 +1,8 @@
+FROM nginx:alpine
+
+# Copy static Web UI application files to Nginx document root
+COPY frontend/ /usr/share/nginx/html/
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

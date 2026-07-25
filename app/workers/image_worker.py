@@ -4,10 +4,13 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.logger import get_logger
 from app.enums import ImageStatus
 from app.repositories import RequestImageRepository, RequestOutputRepository, RequestRepository
 from app.services.minio_service import MinIOService
 from app.services.rabbitmq_service import RabbitMQService
+
+logger = get_logger(__name__)
 
 
 class YOLOImageWorker:
@@ -27,7 +30,7 @@ class YOLOImageWorker:
                 # Load pre-trained YOLO model (e.g. yolov8n.pt or custom food weights)
                 self._yolo_model = YOLO("yolov8n.pt")
             except Exception as e:
-                print(f"[YOLOImageWorker] Warning: Could not load ultralytics YOLO model ({e}). Using mock engine.")
+                logger.warning("Could not load ultralytics YOLO model (%s). Using mock engine.", e)
                 self._yolo_model = None
         return self._yolo_model
 
@@ -83,7 +86,7 @@ class YOLOImageWorker:
             return detected_items, annotated_bytes
 
         except Exception as e:
-            print(f"[YOLOImageWorker] Error during detection: {e}")
+            logger.exception("Error during YOLO ingredient detection: %s", e)
             fallback_items = [{"name": "detected ingredient", "confidence": 0.80}]
             return fallback_items, image_bytes
 
@@ -93,7 +96,7 @@ class YOLOImageWorker:
         image_url = payload.get("image_url")
 
         if not request_id or not image_url:
-            print("[YOLOImageWorker] Invalid payload missing request_id or image_url")
+            logger.error("Invalid payload missing request_id or image_url: %s", payload)
             return False
 
         req_repo = RequestRepository(db)
@@ -133,7 +136,7 @@ class YOLOImageWorker:
         ingredient_names = [item["name"] for item in detected_ingredients]
         out_repo.upsert_output(request_id=request_id, ingredients=detected_ingredients)
 
-        print(f"[YOLOImageWorker] Successfully processed image for Request #{request_id}. Extracted: {ingredient_names}")
+        logger.info("Successfully processed image for Request #%s. Extracted ingredients: %s", request_id, ingredient_names)
 
         # 6. Trigger Stage 1 LLM Recipe Generation Task
         self.rabbitmq_service.publish_task(

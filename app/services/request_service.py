@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.logger import get_logger
 from app.enums import ImageStatus, InputType, RequestStatus
 from app.repositories import (
     RequestImageRepository,
@@ -19,6 +20,8 @@ from app.schemas import (
 )
 from app.services.minio_service import MinIOService
 from app.services.rabbitmq_service import RabbitMQService
+
+logger = get_logger(__name__)
 
 
 class RequestService:
@@ -55,7 +58,7 @@ class RequestService:
             },
         )
         if not sent:
-            print(f"[RequestService] Warning: RabbitMQ task publishing returned False for Request #{request_obj.id}")
+            logger.warning("RabbitMQ task publishing returned False for Request #%s", request_obj.id)
 
         # 2. Synchronous execution for immediate UI responsiveness (lazy import to prevent circular dependency)
         try:
@@ -70,7 +73,7 @@ class RequestService:
                 db=self.db,
             )
         except Exception as e:
-            print(f"[RequestService] Synchronous worker execution fallback info: {e}")
+            logger.info("Synchronous worker execution fallback info: %s", e)
 
         return RequestResponse.model_validate(request_obj)
 

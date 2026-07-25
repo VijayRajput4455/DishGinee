@@ -2,9 +2,12 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.logger import get_logger
 from app.repositories import RequestOutputRepository, RequestRepository
 from app.services.minio_service import MinIOService
 from app.services.rabbitmq_service import RabbitMQService
+
+logger = get_logger(__name__)
 
 
 class WhisperVoiceWorker:
@@ -23,7 +26,7 @@ class WhisperVoiceWorker:
             # transcript = client.audio.transcriptions.create(model="whisper-1", file=...)
             return "tomatoes, garlic, spinach, olive oil, chicken"
         except Exception as e:
-            print(f"[WhisperVoiceWorker] Warning: Whisper API unavailable ({e}). Using mock transcription.")
+            logger.warning("Whisper API unavailable (%s). Using mock transcription.", e)
             return "tomatoes, garlic, spinach, olive oil, chicken"
 
     def process_voice_task(self, payload: dict[str, Any], db: Session) -> bool:
@@ -32,7 +35,7 @@ class WhisperVoiceWorker:
         audio_url = payload.get("audio_url")
 
         if not request_id or not audio_url:
-            print("[WhisperVoiceWorker] Invalid payload missing request_id or audio_url")
+            logger.error("Invalid payload missing request_id or audio_url: %s", payload)
             return False
 
         req_repo = RequestRepository(db)
@@ -51,7 +54,7 @@ class WhisperVoiceWorker:
         ingredients_list = [item.strip() for item in transcription_text.split(",") if item.strip()]
         out_repo.upsert_output(request_id=request_id, ingredients=ingredients_list)
 
-        print(f"[WhisperVoiceWorker] Successfully transcribed audio for Request #{request_id}: '{transcription_text}'")
+        logger.info("Successfully transcribed audio for Request #%s: '%s'", request_id, transcription_text)
 
         # 4. Trigger Stage 1 LLM Recipe Generation Task
         self.rabbitmq_service.publish_task(

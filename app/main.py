@@ -7,10 +7,17 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.api import api_router
-from app.core.database import engine
+from app.core.config import settings
+from app.core.context import set_request_id
+from app.core.database import Base, engine, get_database_status
+from app.core.logger import get_logger, setup_logging
 import app.models  # Ensure all ORM models are registered
-from app.models.base import Base
 from app.schemas import ErrorDetail, ErrorResponse
+from app.workers.consumer import get_worker_runtime_status, start_worker_in_background
+
+# Initialize process-wide logging
+setup_logging(level=settings.LOG_LEVEL, log_dir=settings.LOG_DIR, log_file=settings.LOG_FILE)
+logger = get_logger(__name__)
 
 app = FastAPI(
     title="DishGenie API",
@@ -29,6 +36,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    """Intercept HTTP request, set context request_id, and inject X-Request-ID response header."""
+    rid = request.headers.get("X-Request-ID")
+    request_id = set_request_id(rid)
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 # Register API v1 Routers
 app.include_router(api_router, prefix="/api/v1")
 
@@ -40,12 +58,25 @@ if os.path.exists(frontend_dir):
 
 @app.on_event("startup")
 def on_startup():
-    """Ensure database tables are auto-created on server startup."""
+    """Ensure database connection is active, auto-create tables, and start worker if enabled."""
+    ok, message = get_database_status()
+    if ok:
+        logger.info(message)
+    else:
+        logger.error(message)
+
     try:
         Base.metadata.create_all(bind=engine)
-        print("[Startup] Database tables initialized successfully.")
+        logger.info("Database schema tables verified/created successfully.")
     except Exception as e:
-        print(f"[Startup] Note: Could not auto-create database tables ({e}).")
+        logger.warning("Could not auto-create database tables (%s).", e)
+
+    if settings.AUTO_START_WORKER:
+        started = start_worker_in_background()
+        if started:
+            logger.info("Embedded background RabbitMQ task worker started (AUTO_START_WORKER=true).")
+        else:
+            logger.info("Embedded background RabbitMQ task worker is already running.")
 
 
 # Custom Exception Handler for Validation Errors
@@ -58,6 +89,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         )
         for err in exc.errors()
     ]
+    logger.warning("Validation error on %s %s: %s", request.method, request.url, details)
     error_payload = ErrorResponse(
         success=False,
         error="VALIDATION_ERROR",
@@ -77,6 +109,12 @@ def health_check():
         "service": "DishGenie API",
         "version": "1.0.0",
     }
+
+
+@app.get("/worker-status", tags=["Worker Status"])
+def worker_status_convenience():
+    """Convenience root endpoint to query background task worker runtime status."""
+    return get_worker_runtime_status()
 
 
 @app.get("/", tags=["Root"])

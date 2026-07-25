@@ -5,8 +5,11 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.logger import get_logger
 from app.enums import RequestStatus
 from app.repositories import RequestOutputRepository, RequestRepository
+
+logger = get_logger(__name__)
 
 
 class LLMRecipeWorker:
@@ -38,7 +41,7 @@ class LLMRecipeWorker:
                     resp_body = json.loads(response.read().decode("utf-8"))
                     return resp_body.get("response")
         except Exception as e:
-            print(f"[LLMRecipeWorker] Warning: Ollama service call to {self.ollama_url} failed ({e}).")
+            logger.warning("Ollama service call to %s failed (%s). Using local fallback.", self.ollama_url, e)
         return None
 
     def generate_stage1_options(self, ingredients: list[str], cuisine: str | None = None) -> list[dict[str, Any]]:
@@ -67,12 +70,12 @@ Do not include any extra commentary. Output pure valid JSON.
             try:
                 parsed = json.loads(raw_response)
                 if isinstance(parsed, list) and len(parsed) >= 1:
-                    print(f"[LLMRecipeWorker] Successfully generated {len(parsed)} recipes via Ollama ({self.ollama_model}).")
+                    logger.info("Successfully generated %s recipes via Ollama (%s).", len(parsed), self.ollama_model)
                     return parsed[:5]
                 elif isinstance(parsed, dict) and "recipes" in parsed:
                     return parsed["recipes"][:5]
             except Exception as parse_err:
-                print(f"[LLMRecipeWorker] Could not parse Ollama JSON response: {parse_err}")
+                logger.warning("Could not parse Ollama JSON response: %s", parse_err)
 
         # Fallback generator: Return 5 customized recipe options
         c_prefix = f"{cuisine.title()} " if cuisine else ""
@@ -152,10 +155,10 @@ Output pure valid JSON only.
             try:
                 parsed = json.loads(raw_response)
                 if isinstance(parsed, dict) and "title" in parsed and "steps" in parsed:
-                    print(f"[LLMRecipeWorker] Successfully generated Stage 2 cooking guide via Ollama.")
+                    logger.info("Successfully generated Stage 2 cooking guide via Ollama.")
                     return parsed
             except Exception as parse_err:
-                print(f"[LLMRecipeWorker] Could not parse Stage 2 Ollama JSON: {parse_err}")
+                logger.warning("Could not parse Stage 2 Ollama JSON: %s", parse_err)
 
         # Fallback Stage 2 guide
         return {
@@ -221,7 +224,7 @@ Output pure valid JSON only.
                 ingredients = [item.strip() for item in raw_text.split(",") if item.strip()]
 
         if not request_id:
-            print("[LLMRecipeWorker] Invalid payload missing request_id")
+            logger.error("Invalid payload missing request_id: %s", payload)
             return False
 
         req_repo = RequestRepository(db)
@@ -236,7 +239,7 @@ Output pure valid JSON only.
         # 3. Update Request status to COMPLETED
         req_repo.update_status(request_id=request_id, status=RequestStatus.COMPLETED)
 
-        print(f"[LLMRecipeWorker] Successfully generated {len(options)} recipes for Request #{request_id} (Cuisine: {cuisine or 'Any'})")
+        logger.info("Successfully generated %s recipes for Request #%s (Cuisine: %s)", len(options), request_id, cuisine or 'Any')
         return True
 
     def process_guide_task(self, payload: dict[str, Any], db: Session) -> bool:
@@ -245,7 +248,7 @@ Output pure valid JSON only.
         selected_recipe = payload.get("selected_recipe")
 
         if not request_id or not selected_recipe:
-            print("[LLMRecipeWorker] Invalid payload missing request_id or selected_recipe")
+            logger.error("Invalid payload missing request_id or selected_recipe: %s", payload)
             return False
 
         out_repo = RequestOutputRepository(db)
@@ -256,5 +259,5 @@ Output pure valid JSON only.
         # 2. Update RequestOutput with cooking guide
         out_repo.upsert_output(request_id=request_id, cooking_guide=guide)
 
-        print(f"[LLMRecipeWorker] Successfully generated cooking guide for '{selected_recipe}' (Request #{request_id})")
+        logger.info("Successfully generated cooking guide for '%s' (Request #%s)", selected_recipe, request_id)
         return True

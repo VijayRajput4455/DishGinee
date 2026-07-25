@@ -5,8 +5,11 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.logger import get_logger
 from app.enums import RequestStatus
 from app.repositories import RequestOutputRepository, RequestRepository
+
+logger = get_logger(__name__)
 
 
 class CookingGuideWorker:
@@ -38,7 +41,7 @@ class CookingGuideWorker:
                     resp_body = json.loads(response.read().decode("utf-8"))
                     return resp_body.get("response")
         except Exception as e:
-            print(f"[CookingGuideWorker] Warning: Ollama call to {self.ollama_url} failed ({e}). Using fallback guide.")
+            logger.warning("Ollama call to %s failed (%s). Using fallback guide.", self.ollama_url, e)
         return None
 
     def generate_full_cooking_guide(self, recipe_title: str) -> dict[str, Any]:
@@ -105,10 +108,10 @@ Do not include any intro or outro text. Return valid JSON only.
             try:
                 parsed = json.loads(raw_response)
                 if isinstance(parsed, dict) and "title" in parsed and "steps" in parsed:
-                    print(f"[CookingGuideWorker] Successfully generated complete cooking guide via Ollama ({self.ollama_model}) for '{recipe_title}'.")
+                    logger.info("Successfully generated complete cooking guide via Ollama (%s) for '%s'.", self.ollama_model, recipe_title)
                     return parsed
             except Exception as parse_err:
-                print(f"[CookingGuideWorker] Could not parse JSON response from Ollama: {parse_err}")
+                logger.warning("Could not parse JSON response from Ollama: %s", parse_err)
 
         # Fallback detailed cooking guide tailored to recipe_title
         return {
@@ -166,7 +169,7 @@ Do not include any intro or outro text. Return valid JSON only.
         selected_recipe = payload.get("selected_recipe")
 
         if not request_id or not selected_recipe:
-            print("[CookingGuideWorker] Invalid payload missing request_id or selected_recipe")
+            logger.error("Invalid payload missing request_id or selected_recipe: %s", payload)
             return False
 
         out_repo = RequestOutputRepository(db)
@@ -181,5 +184,5 @@ Do not include any intro or outro text. Return valid JSON only.
         # 3. Mark Request status as COMPLETED
         req_repo.update_status(request_id=request_id, status=RequestStatus.COMPLETED)
 
-        print(f"[CookingGuideWorker] Task Finished! Complete cooking guide stored for '{selected_recipe}' (Request #{request_id})")
+        logger.info("Task Finished! Complete cooking guide stored for '%s' (Request #%s)", selected_recipe, request_id)
         return True
