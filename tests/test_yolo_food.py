@@ -1,7 +1,9 @@
-"""Real YOLO Food & Ingredient Object Detection Inference Test."""
-
 import os
 import sys
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 # Ensure UTF-8 output encoding for Windows terminals
 if sys.platform == "win32":
