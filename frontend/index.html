@@ -1775,12 +1775,15 @@
               <input type="text" id="new-cuisine-name" class="input-text" placeholder="e.g. Spanish, Greek, Lebanese" required>
             </div>
             <div>
-              <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.35rem;">Emoji Flag / Icon *</label>
-              <input type="text" id="new-cuisine-emoji" class="input-text" placeholder="e.g. 🇪🇸, 🇬🇷, 🇱🇧" required>
-            </div>
-            <div>
               <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.35rem;">Country Code</label>
               <input type="text" id="new-cuisine-code" class="input-text" placeholder="e.g. ES, GR, LB">
+            </div>
+            <div>
+              <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.35rem;">Status</label>
+              <select id="new-cuisine-active" class="input-text" style="cursor:pointer; background:rgba(0,0,0,0.6);">
+                <option value="true" selected>🟢 Active</option>
+                <option value="false">🔴 Inactive</option>
+              </select>
             </div>
           </div>
 
@@ -2005,12 +2008,15 @@
           
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:0.95rem;">
             <div>
-              <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.35rem;">Emoji Icon *</label>
-              <input type="text" id="edit-cuisine-emoji" class="input-text" required style="width:100%;">
-            </div>
-            <div>
               <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.35rem;">Code (2-3 chars)</label>
               <input type="text" id="edit-cuisine-code" class="input-text" style="width:100%;">
+            </div>
+            <div>
+              <label style="display:block; font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.35rem;">Status</label>
+              <select id="edit-cuisine-active" class="input-text" style="width:100%; cursor:pointer; background:rgba(0,0,0,0.6);">
+                <option value="true">🟢 Active</option>
+                <option value="false">🔴 Inactive</option>
+              </select>
             </div>
           </div>
           
@@ -2057,21 +2063,21 @@
     });
 
     const DEFAULT_CUISINES_FALLBACK = [
-      { id: 1, name: "Indian", emoji: "🇮🇳", code: "IN", description: "Rich aromatic curries, gravies, biryanis & spicy masalas." },
-      { id: 2, name: "Italian", emoji: "🇮🇹", code: "IT", description: "Authentic hand-tossed pizzas, creamy pastas, & risottos." },
-      { id: 3, name: "Mexican", emoji: "🇲🇽", code: "MX", description: "Flavorful tacos, cheesy quesadillas, burritos & salsas." },
-      { id: 4, name: "Asian", emoji: "⛩️", code: "AS", description: "Dim sums, stir-fried noodles, ramen & savoury broths." },
-      { id: 5, name: "French", emoji: "🇫🇷", code: "FR", description: "Gourmet buttery pastries, bisques, soufflés & stews." },
-      { id: 6, name: "Mediterranean", emoji: "🌴", code: "MD", description: "Healthy olive oil roasts, hummus, falafel & grilled seafood." },
-      { id: 7, name: "Japanese", emoji: "🇯🇵", code: "JP", description: "Fresh sushi rolls, teriyaki grills, tempura & miso bowls." },
-      { id: 8, name: "Thai", emoji: "🇹🇭", code: "TH", description: "Spicy aromatic green curries, pad thai & lemongrass soups." }
+      { id: 1, name: "Indian", code: "IN", description: "Rich aromatic curries, gravies, biryanis & spicy masalas.", is_active: true },
+      { id: 2, name: "Italian", code: "IT", description: "Authentic hand-tossed pizzas, creamy pastas, & risottos.", is_active: true },
+      { id: 3, name: "Mexican", code: "MX", description: "Flavorful tacos, cheesy quesadillas, burritos & salsas.", is_active: true },
+      { id: 4, name: "Asian", code: "AS", description: "Dim sums, stir-fried noodles, ramen & savoury broths.", is_active: true },
+      { id: 5, name: "French", code: "FR", description: "Gourmet buttery pastries, bisques, soufflés & stews.", is_active: true },
+      { id: 6, name: "Mediterranean", code: "MD", description: "Healthy olive oil roasts, hummus, falafel & grilled seafood.", is_active: true },
+      { id: 7, name: "Japanese", code: "JP", description: "Fresh sushi rolls, teriyaki grills, tempura & miso bowls.", is_active: true },
+      { id: 8, name: "Thai", code: "TH", description: "Spicy aromatic green curries, pad thai & lemongrass soups.", is_active: true }
     ];
 
     let allCuisinesData = DEFAULT_CUISINES_FALLBACK;
 
     async function loadCuisines() {
       try {
-        const res = await fetch(`${backendUrl}/cuisines`);
+        const res = await fetch(`${backendUrl}/cuisines?include_inactive=true`);
         const json = await res.json();
         if (json.success && json.data && json.data.length > 0) {
           allCuisinesData = json.data;
@@ -2081,7 +2087,7 @@
       } catch (err) {
         allCuisinesData = DEFAULT_CUISINES_FALLBACK;
       }
-      renderCuisineMatrix(allCuisinesData);
+      renderCuisineMatrix(allCuisinesData.filter(c => c.is_active !== false));
       renderCuisinesManagerGrid(allCuisinesData);
     }
 
@@ -2100,8 +2106,8 @@
       if (!matrix) return;
       matrix.innerHTML = cuisines.map(c => `
         <div class="cuisine-card ${c.name.toLowerCase() === activeCuisine.toLowerCase() ? 'selected' : ''}" onclick="selectCuisine(this, '${c.name.replace(/'/g, "\\'")}')">
-          <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">${c.emoji}</span>
-          <div style="font-weight:700; font-size:0.78rem;">${c.name}</div>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.12); padding:0.15rem 0.5rem; border-radius:6px; display:inline-block; margin-bottom:0.25rem;">${c.code}</span>
+          <div style="font-weight:700; font-size:0.8rem;">${c.name}</div>
         </div>
       `).join('');
     }
@@ -2109,30 +2115,39 @@
     function renderCuisinesManagerGrid(cuisines) {
       const grid = document.getElementById('cuisines-manager-grid');
       const countTag = document.getElementById('cuisines-count-tag');
-      if (countTag) countTag.innerText = `${cuisines.length} Active Cuisines`;
+      const activeCount = cuisines.filter(c => c.is_active !== false).length;
+      if (countTag) countTag.innerText = `${cuisines.length} Total (${activeCount} Active)`;
 
       if (!grid) return;
-      grid.innerHTML = cuisines.map(c => `
-        <div class="glass-card" style="padding:1.25rem; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
+      grid.innerHTML = cuisines.map(c => {
+        const isActive = c.is_active !== false;
+        return `
+        <div class="glass-card" style="padding:1.25rem; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; border-color:${isActive ? 'var(--border)' : 'rgba(255,77,77,0.25)'}; opacity:${isActive ? '1' : '0.65'};">
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
-              <span style="font-size:2rem;">${c.emoji}</span>
-              <span style="font-size:0.72rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.12); padding:0.2rem 0.6rem; border-radius:6px; border:1px solid var(--border-accent);">${c.code}</span>
+              <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.12); padding:0.2rem 0.6rem; border-radius:6px; border:1px solid var(--border-accent);">${c.code}</span>
+              <span style="font-size:0.72rem; font-weight:800; padding:0.2rem 0.6rem; border-radius:6px; border:1px solid ${isActive ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}; background:${isActive ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${isActive ? '#10B981' : '#EF4444'};">
+                ${isActive ? '🟢 Active' : '🔴 Inactive'}
+              </span>
             </div>
             <h4 style="font-family:var(--font-heading); font-size:1.15rem; font-weight:800; color:#FFFFFF; margin-bottom:0.35rem;">${c.name}</h4>
             <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45; margin-bottom:1.15rem;">${c.description || 'Custom database cuisine style.'}</p>
           </div>
           
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:auto;">
-            <button class="btn-action" style="padding:0.45rem; font-size:0.78rem; background:rgba(255,184,0,0.12); border-color:rgba(255,184,0,0.25); color:var(--accent-gold);" onclick="openEditCuisineModal(${c.id})">
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.4rem; margin-top:auto;">
+            <button class="btn-action" style="padding:0.45rem 0.2rem; font-size:0.75rem; background:rgba(255,184,0,0.12); border-color:rgba(255,184,0,0.25); color:var(--accent-gold);" onclick="openEditCuisineModal(${c.id})">
               ✏️ Edit
             </button>
-            <button class="btn-action" style="padding:0.45rem; font-size:0.78rem; background:rgba(255,77,77,0.12); border-color:rgba(255,77,77,0.25); color:#FF5555;" onclick="deleteCuisineItem(${c.id})">
+            <button class="btn-action" style="padding:0.45rem 0.2rem; font-size:0.75rem; background:${isActive ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)'}; border-color:${isActive ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.3)'}; color:${isActive ? '#F59E0B' : '#10B981'};" onclick="toggleCuisineActiveStatus(${c.id}, ${!isActive})">
+              ${isActive ? '⏸️ Deactivate' : '▶️ Activate'}
+            </button>
+            <button class="btn-action" style="padding:0.45rem 0.2rem; font-size:0.75rem; background:rgba(255,77,77,0.12); border-color:rgba(255,77,77,0.25); color:#FF5555;" onclick="deleteCuisineItem(${c.id})">
               🗑️ Delete
             </button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     async function openEditCuisineModal(id) {
@@ -2150,9 +2165,9 @@
 
       document.getElementById('edit-cuisine-id').value = c.id;
       document.getElementById('edit-cuisine-name').value = c.name;
-      document.getElementById('edit-cuisine-emoji').value = c.emoji;
       document.getElementById('edit-cuisine-code').value = c.code || '';
       document.getElementById('edit-cuisine-desc').value = c.description || '';
+      document.getElementById('edit-cuisine-active').value = (c.is_active !== false).toString();
 
       const modal = document.getElementById('edit-cuisine-modal');
       modal.style.display = 'flex';
@@ -2166,15 +2181,15 @@
       e.preventDefault();
       const id = document.getElementById('edit-cuisine-id').value;
       const name = document.getElementById('edit-cuisine-name').value.trim();
-      const emoji = document.getElementById('edit-cuisine-emoji').value.trim();
       const code = document.getElementById('edit-cuisine-code').value.trim();
       const description = document.getElementById('edit-cuisine-desc').value.trim();
+      const is_active = document.getElementById('edit-cuisine-active').value === 'true';
 
       try {
         const res = await fetch(`${backendUrl}/cuisines/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, emoji, code, description })
+          body: JSON.stringify({ name, code, description, is_active })
         });
         const json = await res.json();
         if (json.success) {
@@ -2188,23 +2203,38 @@
       }
     }
 
+    async function toggleCuisineActiveStatus(id, newStatus) {
+      try {
+        const res = await fetch(`${backendUrl}/cuisines/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: newStatus })
+        });
+        const json = await res.json();
+        if (json.success) {
+          loadCuisines();
+        }
+      } catch (err) {
+        alert('Failed to update status');
+      }
+    }
+
     async function handleCreateCuisine(e) {
       e.preventDefault();
       const name = document.getElementById('new-cuisine-name').value.trim();
-      const emoji = document.getElementById('new-cuisine-emoji').value.trim();
       const code = document.getElementById('new-cuisine-code').value.trim() || 'CUSTOM';
       const description = document.getElementById('new-cuisine-desc').value.trim();
+      const is_active = document.getElementById('new-cuisine-active').value === 'true';
 
       try {
         const res = await fetch(`${backendUrl}/cuisines`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, emoji, code, description })
+          body: JSON.stringify({ name, code, description, is_active })
         });
         const json = await res.json();
         if (json.success) {
           document.getElementById('new-cuisine-name').value = '';
-          document.getElementById('new-cuisine-emoji').value = '';
           document.getElementById('new-cuisine-code').value = '';
           document.getElementById('new-cuisine-desc').value = '';
           loadCuisines();

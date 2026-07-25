@@ -12,10 +12,9 @@ class Cuisine(BaseModel):
     __tablename__ = "cuisines"
 
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
-    emoji: Mapped[str] = mapped_column(String(10), nullable=False, default="🍽️")
     code: Mapped[str] = mapped_column(String(10), nullable=False, default="CUSTOM")
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     def __repr__(self) -> str:
-        return f"<Cuisine id={self.id} name='{self.name}' emoji='{self.emoji}' active={self.is_active}>"
+        return f"<Cuisine id={self.id} name='{self.name}' code='{self.code}' active={self.is_active}>"

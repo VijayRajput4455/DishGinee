@@ -10,10 +10,10 @@ router = APIRouter(prefix="/cuisines", tags=["Cuisines Management"])
 
 
 @router.get("", response_model=dict, status_code=status.HTTP_200_OK)
-def list_cuisines(db: Session = Depends(get_db)):
-    """Fetch all active cuisines (automatically seeds defaults if empty)."""
+def list_cuisines(include_inactive: bool = True, db: Session = Depends(get_db)):
+    """Fetch cuisines (automatically seeds defaults if empty)."""
     repo = CuisineRepository(db)
-    items = repo.get_all_active()
+    items = repo.get_all_cuisines(include_inactive=include_inactive)
     return {
         "success": True,
         "count": len(items),
@@ -34,7 +34,6 @@ def create_cuisine(payload: CuisineCreate, db: Session = Depends(get_db)):
 
     new_obj = Cuisine(
         name=payload.name,
-        emoji=payload.emoji,
         code=payload.code,
         description=payload.description,
         is_active=payload.is_active,
@@ -80,8 +79,6 @@ def update_cuisine(cuisine_id: int, payload: CuisineUpdate, db: Session = Depend
             )
         obj.name = payload.name
 
-    if payload.emoji is not None:
-        obj.emoji = payload.emoji
     if payload.code is not None:
         obj.code = payload.code
     if payload.description is not None:
