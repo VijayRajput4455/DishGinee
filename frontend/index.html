@@ -2126,22 +2126,19 @@
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
               <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.12); padding:0.2rem 0.6rem; border-radius:6px; border:1px solid var(--border-accent);">${c.code}</span>
-              <span style="font-size:0.72rem; font-weight:800; padding:0.2rem 0.6rem; border-radius:6px; border:1px solid ${isActive ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}; background:${isActive ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${isActive ? '#10B981' : '#EF4444'};">
+              <button style="font-size:0.72rem; font-weight:800; padding:0.25rem 0.65rem; border-radius:6px; border:1px solid ${isActive ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}; background:${isActive ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; color:${isActive ? '#10B981' : '#EF4444'}; cursor:pointer; transition:all 0.2s ease;" onclick="toggleCuisineActiveStatus(${c.id}, ${!isActive})" title="Click to toggle Active / Inactive">
                 ${isActive ? '🟢 Active' : '🔴 Inactive'}
-              </span>
+              </button>
             </div>
             <h4 style="font-family:var(--font-heading); font-size:1.15rem; font-weight:800; color:#FFFFFF; margin-bottom:0.35rem;">${c.name}</h4>
             <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.45; margin-bottom:1.15rem;">${c.description || 'Custom database cuisine style.'}</p>
           </div>
           
-          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.4rem; margin-top:auto;">
-            <button class="btn-action" style="padding:0.45rem 0.2rem; font-size:0.75rem; background:rgba(255,184,0,0.12); border-color:rgba(255,184,0,0.25); color:var(--accent-gold);" onclick="openEditCuisineModal(${c.id})">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; margin-top:auto;">
+            <button class="btn-action" style="padding:0.45rem; font-size:0.78rem; background:rgba(255,184,0,0.12); border-color:rgba(255,184,0,0.25); color:var(--accent-gold);" onclick="openEditCuisineModal(${c.id})">
               ✏️ Edit
             </button>
-            <button class="btn-action" style="padding:0.45rem 0.2rem; font-size:0.75rem; background:${isActive ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)'}; border-color:${isActive ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.3)'}; color:${isActive ? '#F59E0B' : '#10B981'};" onclick="toggleCuisineActiveStatus(${c.id}, ${!isActive})">
-              ${isActive ? '⏸️ Deactivate' : '▶️ Activate'}
-            </button>
-            <button class="btn-action" style="padding:0.45rem 0.2rem; font-size:0.75rem; background:rgba(255,77,77,0.12); border-color:rgba(255,77,77,0.25); color:#FF5555;" onclick="deleteCuisineItem(${c.id})">
+            <button class="btn-action" style="padding:0.45rem; font-size:0.78rem; background:rgba(255,77,77,0.12); border-color:rgba(255,77,77,0.25); color:#FF5555;" onclick="deleteCuisineItem(${c.id})">
               🗑️ Delete
             </button>
           </div>
