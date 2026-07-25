@@ -39,7 +39,22 @@ services:
       timeout: 5s
       retries: 5
 
-  # 3. MinIO Object Storage
+  # 3. Redis In-Memory Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: dishgenie_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 4. MinIO Object Storage
   minio:
     image: minio/minio:latest
     container_name: dishgenie_minio
@@ -59,7 +74,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # 4. One-shot Bucket Creator for MinIO
+  # 5. One-shot Bucket Creator for MinIO
   create-bucket:
     image: minio/mc:latest
     container_name: dishgenie_minio_setup
@@ -74,7 +89,7 @@ services:
       exit 0;
       "
 
-  # 5. Ollama Local LLM Engine Service
+  # 6. Ollama Local LLM Engine Service
   ollama:
     image: ollama/ollama:latest
     container_name: dishgenie_ollama
@@ -84,7 +99,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
 
-  # 6. FastAPI Application Service
+  # 7. FastAPI Application Service
   app:
     build:
       context: .
@@ -103,6 +118,9 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-dishgenie_rmq_user}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-dishgenie_rmq_password}
       RABBITMQ_QUEUE_NAME: ${RABBITMQ_QUEUE_NAME:-dishgenie_tasks}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AUTO_START_WORKER: "True"
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-""}
@@ -115,12 +133,14 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       minio:
         condition: service_healthy
       ollama:
         condition: service_started
 
-  # 7. Background Task Worker Service
+  # 8. Background Task Worker Service
   worker:
     build:
       context: .
@@ -139,6 +159,8 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-dishgenie_rmq_user}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-dishgenie_rmq_password}
       RABBITMQ_QUEUE_NAME: ${RABBITMQ_QUEUE_NAME:-dishgenie_tasks}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-""}
@@ -149,12 +171,14 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       minio:
         condition: service_healthy
       ollama:
         condition: service_started
 
-  # 8. Web Frontend UI & Reverse Proxy Gateway
+  # 9. Web Frontend UI & Reverse Proxy Gateway
   nginx:
     build:
       context: .
@@ -169,5 +193,6 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
+  redis_data:
   minio_data:
   ollama_data:
