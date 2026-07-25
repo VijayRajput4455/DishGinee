@@ -212,6 +212,14 @@ Output pure valid JSON only.
         ingredients = payload.get("ingredients", [])
         cuisine = payload.get("cuisine")
 
+        # Parse ingredients if passed as string or raw text fallback
+        if isinstance(ingredients, str):
+            ingredients = [item.strip() for item in ingredients.split(",") if item.strip()]
+        elif not ingredients:
+            raw_text = payload.get("raw_text_input") or payload.get("text")
+            if raw_text and isinstance(raw_text, str):
+                ingredients = [item.strip() for item in raw_text.split(",") if item.strip()]
+
         if not request_id:
             print("[LLMRecipeWorker] Invalid payload missing request_id")
             return False

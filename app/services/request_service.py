@@ -40,20 +40,25 @@ class RequestService:
             cuisine=cuisine,
         )
 
+        ingredients_list = [item.strip() for item in raw_text_input.split(",") if item.strip()]
+
         # 1. Publish task to RabbitMQ queue
-        self.rabbitmq_service.publish_task(
+        sent = self.rabbitmq_service.publish_task(
             task_type="recipe.generation",
             payload={
                 "request_id": request_obj.id,
                 "input_type": InputType.TEXT.value,
+                "raw_text_input": raw_text_input,
                 "text": raw_text_input,
+                "ingredients": ingredients_list,
                 "cuisine": cuisine,
             },
         )
+        if not sent:
+            print(f"[RequestService] Warning: RabbitMQ task publishing returned False for Request #{request_obj.id}")
 
         # 2. Synchronous execution for immediate UI responsiveness (lazy import to prevent circular dependency)
         from app.workers.recipe_worker import LLMRecipeWorker
-        ingredients_list = [item.strip() for item in raw_text_input.split(",") if item.strip()]
         recipe_worker = LLMRecipeWorker()
         recipe_worker.process_recipe_task(
             payload={

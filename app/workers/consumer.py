@@ -58,7 +58,7 @@ class RabbitMQTaskConsumer:
         finally:
             db.close()
 
-    def start((self)) -> None:
+    def start(self) -> None:
         """Start listening continuously to RabbitMQ task queue."""
         try:
             import pika

@@ -484,6 +484,9 @@
         <div id="recipe-cards-container" class="recipe-grid"></div>
       </div>
 
+      <!-- Stage 2 Complete Master Cooking Guide -->
+      <div id="guide-wrapper" style="display: none; margin-top: 3rem;"></div>
+
     </div>
 
   </main>
@@ -516,8 +519,10 @@
     async function generateRecipes() {
       const text = document.getElementById('ingredients-text').value;
       const resultsWrapper = document.getElementById('results-wrapper');
+      const guideWrapper = document.getElementById('guide-wrapper');
       const cardsContainer = document.getElementById('recipe-cards-container');
 
+      guideWrapper.style.display = 'none';
       resultsWrapper.style.display = 'block';
       cardsContainer.innerHTML = '<div class="glass-card" style="grid-column:1/-1; text-align:center; padding:3rem;"><div style="font-size:2rem; margin-bottom:1rem;">⚡</div><h3 style="font-size:1.3rem; font-weight:800;">Ollama LLM (qwen2.5) is crafting 5 recipes...</h3></div>';
 
@@ -560,18 +565,146 @@
     }
 
     async function selectStage2(reqId, title) {
-      alert(`Generating full Stage 2 cooking guide for '${title}'...`);
-      await fetch(`${backendUrl}/requests/${reqId}/select-recipe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipe_title: title })
-      });
-      const detailRes = await fetch(`${backendUrl}/requests/${reqId}`);
-      const detailJson = await detailRes.json();
-      const guide = detailJson.data?.output?.cooking_guide;
+      const guideWrapper = document.getElementById('guide-wrapper');
+      guideWrapper.style.display = 'block';
+      guideWrapper.scrollIntoView({ behavior: 'smooth' });
+      guideWrapper.innerHTML = `
+        <div class="glass-card" style="text-align:center; padding:3.5rem;">
+          <div style="font-size:2.5rem; margin-bottom:1rem;">🍳</div>
+          <h3 style="font-size:1.4rem; font-weight:800; margin-bottom:0.5rem;">Generating Master Cooking Guide for '${title}'...</h3>
+          <p style="color:var(--text-secondary);">Ollama LLM is calculating exact measurements, step timings, and nutritional macros.</p>
+        </div>
+      `;
 
-      if (guide) {
-        alert(`🎉 Full Master Cooking Guide Generated!\nTitle: ${guide.title}\nPrep: ${guide.prep_time} | Cook: ${guide.cook_time}\nNutritional Macros: ${guide.macros?.calories || 380} kcal | Protein: ${guide.macros?.protein_g || 8.5}g`);
+      try {
+        await fetch(`${backendUrl}/requests/${reqId}/select-recipe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipe_title: title })
+        });
+
+        const detailRes = await fetch(`${backendUrl}/requests/${reqId}`);
+        const detailJson = await detailRes.json();
+        const guide = detailJson.data?.output?.cooking_guide;
+
+        if (!guide) {
+          guideWrapper.innerHTML = `<div class="glass-card" style="color:#EF4444;"><p>Could not load cooking guide payload.</p></div>`;
+          return;
+        }
+
+        const macros = guide.macros || {};
+        const steps = guide.steps || [];
+        const ingredients = guide.ingredients || [];
+        const subs = guide.substitutions || [];
+
+        guideWrapper.innerHTML = `
+          <div class="glass-card" style="border:1px solid var(--border-accent); box-shadow:var(--shadow-glow);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.08em; background:rgba(255,107,0,0.12); padding:0.35rem 0.85rem; border-radius:12px; border:1px solid var(--border-accent);">
+                  Stage 2 Complete Master Recipe
+                </span>
+                <h2 style="font-family:var(--font-heading); font-size:2rem; font-weight:800; margin-top:0.75rem;">${guide.title}</h2>
+              </div>
+              
+              <div style="display:flex; gap:1.25rem; background:rgba(0,0,0,0.25); padding:0.85rem 1.25rem; border-radius:16px; border:1px solid var(--border);">
+                <div style="text-align:center;">
+                  <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Servings</div>
+                  <div style="font-size:1.15rem; font-weight:800; color:var(--accent-gold);">${guide.servings || 2}</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Prep Time</div>
+                  <div style="font-size:1.15rem; font-weight:800; color:var(--text-primary);">${guide.prep_time || '15 mins'}</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Cook Time</div>
+                  <div style="font-size:1.15rem; font-weight:800; color:var(--text-primary);">${guide.cook_time || '20 mins'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1.8fr; gap:2rem; margin-top:2rem;">
+              
+              <!-- Left Sidebar: Ingredients & Nutritional Macros -->
+              <div>
+                <!-- Ingredients Card -->
+                <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:16px; padding:1.25rem; margin-bottom:1.5rem;">
+                  <h3 style="font-size:1.05rem; font-weight:800; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.5rem; color:var(--accent-orange);">
+                    <span>🛒</span> Exact Measurements
+                  </h3>
+                  <ul style="list-style:none; display:flex; flex-direction:column; gap:0.6rem;">
+                    ${ingredients.map(ing => `
+                      <li style="font-size:0.9rem; color:var(--text-primary); display:flex; align-items:center; gap:0.6rem;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:var(--accent-orange);"></span>
+                        ${typeof ing === 'object' ? `${ing.quantity || ''} ${ing.item || ''}` : ing}
+                      </li>
+                    `).join('')}
+                  </ul>
+                </div>
+
+                <!-- Macros Matrix -->
+                <div style="background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:16px; padding:1.25rem;">
+                  <h3 style="font-size:1.05rem; font-weight:800; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.5rem; color:var(--accent-gold);">
+                    <span>📊</span> Nutritional Macros
+                  </h3>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <div style="background:rgba(255,255,255,0.03); padding:0.75rem; border-radius:12px; text-align:center;">
+                      <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted);">CALORIES</div>
+                      <div style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">${macros.calories || 420} kcal</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); padding:0.75rem; border-radius:12px; text-align:center;">
+                      <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted);">PROTEIN</div>
+                      <div style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">${macros.protein_g || 18.5}g</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); padding:0.75rem; border-radius:12px; text-align:center;">
+                      <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted);">CARBS</div>
+                      <div style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">${macros.carbs_g || 38}g</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); padding:0.75rem; border-radius:12px; text-align:center;">
+                      <div style="font-size:0.68rem; font-weight:800; color:var(--text-muted);">FATS</div>
+                      <div style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">${macros.fats_g || 20}g</div>
+                    </div>
+                  </div>
+                </div>
+
+                ${subs.length ? `
+                  <div style="margin-top:1.5rem; background:rgba(255,184,0,0.06); border:1px solid rgba(255,184,0,0.2); border-radius:16px; padding:1.1rem;">
+                    <h4 style="font-size:0.85rem; font-weight:800; color:var(--accent-gold); margin-bottom:0.4rem;">💡 Chef Substitutions</h4>
+                    <p style="font-size:0.82rem; color:var(--text-secondary); line-height:1.4;">${subs.join('<br>')}</p>
+                  </div>
+                ` : ''}
+
+              </div>
+
+              <!-- Right Area: Step-by-Step Cooking Guide -->
+              <div>
+                <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                  <span>👨‍🍳</span> Step-by-Step Preparation Guide
+                </h3>
+                
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                  ${steps.map(step => `
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:16px; padding:1.25rem; transition:all 0.25s ease;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                        <span style="font-size:0.8rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.05em;">Step ${step.step_number}</span>
+                        <span style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">⏱️ ${step.duration_minutes} mins</span>
+                      </div>
+                      <p style="font-size:0.95rem; color:var(--text-primary); line-height:1.5; margin-bottom:0.75rem;">${step.instruction}</p>
+                      ${step.equipment && step.equipment.length ? `
+                        <div style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">
+                          🛠️ Tools Needed: <span style="color:var(--text-secondary);">${step.equipment.join(', ')}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        guideWrapper.innerHTML = `<div class="glass-card" style="color:#EF4444;"><p>Error fetching Stage 2 cooking guide: ${err.message}</p></div>`;
       }
     }
   </script>
