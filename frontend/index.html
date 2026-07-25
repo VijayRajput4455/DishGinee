@@ -1752,6 +1752,77 @@
         </div>
       </div>
 
+      <!-- 4 Toggle Metric Stat Cards Grid for Cuisines -->
+      <div class="metrics-grid" style="margin-bottom:1.5rem;">
+        <!-- Card 1: Total Cuisines -->
+        <div class="stat-card active-filter" id="cuisine-stat-card-total" onclick="filterCuisinesByMetric('all')">
+          <div class="stat-card-body">
+            <div class="stat-icon-box stat-icon-orange">
+              <span style="font-size:1.3rem;">📚</span>
+            </div>
+            <div>
+              <div class="stat-number" id="cuisine-stat-total-num">8</div>
+              <div class="stat-label">Total Cuisines</div>
+              <div class="stat-subtext">All database entries</div>
+            </div>
+          </div>
+          <svg class="stat-wave" viewBox="0 0 160 30" preserveAspectRatio="none">
+            <path d="M0,25 Q30,25 50,18 T100,8 T160,20" fill="none" stroke="#FF6B00" stroke-width="2.5" />
+          </svg>
+        </div>
+
+        <!-- Card 2: Active Cuisines -->
+        <div class="stat-card" id="cuisine-stat-card-active" onclick="filterCuisinesByMetric('active')">
+          <div class="stat-card-body">
+            <div class="stat-icon-box stat-icon-green">
+              <span style="font-size:1.3rem;">🟢</span>
+            </div>
+            <div>
+              <div class="stat-number" id="cuisine-stat-active-num">8</div>
+              <div class="stat-label">Active Cuisines</div>
+              <div class="stat-subtext">Generator options</div>
+            </div>
+          </div>
+          <svg class="stat-wave" viewBox="0 0 160 30" preserveAspectRatio="none">
+            <path d="M0,25 Q30,25 50,20 T100,10 T160,22" fill="none" stroke="#10B981" stroke-width="2.5" />
+          </svg>
+        </div>
+
+        <!-- Card 3: Inactive Cuisines -->
+        <div class="stat-card" id="cuisine-stat-card-inactive" onclick="filterCuisinesByMetric('inactive')">
+          <div class="stat-card-body">
+            <div class="stat-icon-box stat-icon-red">
+              <span style="font-size:1.3rem;">🔴</span>
+            </div>
+            <div>
+              <div class="stat-number" id="cuisine-stat-inactive-num">0</div>
+              <div class="stat-label">Inactive Cuisines</div>
+              <div class="stat-subtext">Hidden entries</div>
+            </div>
+          </div>
+          <svg class="stat-wave" viewBox="0 0 160 30" preserveAspectRatio="none">
+            <path d="M0,25 Q30,25 50,15 T100,22 T160,18" fill="none" stroke="#EF4444" stroke-width="2.5" />
+          </svg>
+        </div>
+
+        <!-- Card 4: Custom / Added Cuisines -->
+        <div class="stat-card" id="cuisine-stat-card-custom" onclick="filterCuisinesByMetric('custom')">
+          <div class="stat-card-body">
+            <div class="stat-icon-box stat-icon-yellow">
+              <span style="font-size:1.3rem;">✨</span>
+            </div>
+            <div>
+              <div class="stat-number" id="cuisine-stat-custom-num">0</div>
+              <div class="stat-label">Custom Styles</div>
+              <div class="stat-subtext">User created</div>
+            </div>
+          </div>
+          <svg class="stat-wave" viewBox="0 0 160 30" preserveAspectRatio="none">
+            <path d="M0,25 Q30,22 50,12 T100,25 T160,15" fill="none" stroke="#F59E0B" stroke-width="2.5" />
+          </svg>
+        </div>
+      </div>
+
       <!-- Add New Cuisine Form Card -->
       <div class="glass-card" style="margin-bottom:1.5rem; padding:1.5rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
@@ -2073,7 +2144,56 @@
       { id: 8, name: "Thai", code: "TH", description: "Spicy aromatic green curries, pad thai & lemongrass soups.", is_active: true }
     ];
 
-    let allCuisinesData = DEFAULT_CUISINES_FALLBACK;
+    let currentCuisineFilter = 'all';
+
+    function updateCuisineStatCards(cuisines) {
+      const total = cuisines.length;
+      const active = cuisines.filter(c => c.is_active !== false).length;
+      const inactive = total - active;
+      const defaultCodes = ["IN", "IT", "MX", "AS", "FR", "MD", "JP", "TH"];
+      const custom = cuisines.filter(c => !defaultCodes.includes(c.code)).length;
+
+      const elTotal = document.getElementById('cuisine-stat-total-num');
+      const elActive = document.getElementById('cuisine-stat-active-num');
+      const elInactive = document.getElementById('cuisine-stat-inactive-num');
+      const elCustom = document.getElementById('cuisine-stat-custom-num');
+
+      if (elTotal) elTotal.innerText = total;
+      if (elActive) elActive.innerText = active;
+      if (elInactive) elInactive.innerText = inactive;
+      if (elCustom) elCustom.innerText = custom;
+    }
+
+    function filterCuisinesByMetric(filterType) {
+      currentCuisineFilter = filterType;
+
+      const cardTotal = document.getElementById('cuisine-stat-card-total');
+      const cardActive = document.getElementById('cuisine-stat-card-active');
+      const cardInactive = document.getElementById('cuisine-stat-card-inactive');
+      const cardCustom = document.getElementById('cuisine-stat-card-custom');
+
+      [cardTotal, cardActive, cardInactive, cardCustom].forEach(c => {
+        if (c) c.classList.remove('active-filter');
+      });
+
+      if (filterType === 'all' && cardTotal) cardTotal.classList.add('active-filter');
+      if (filterType === 'active' && cardActive) cardActive.classList.add('active-filter');
+      if (filterType === 'inactive' && cardInactive) cardInactive.classList.add('active-filter');
+      if (filterType === 'custom' && cardCustom) cardCustom.classList.add('active-filter');
+
+      const defaultCodes = ["IN", "IT", "MX", "AS", "FR", "MD", "JP", "TH"];
+      let filtered = allCuisinesData;
+
+      if (filterType === 'active') {
+        filtered = allCuisinesData.filter(c => c.is_active !== false);
+      } else if (filterType === 'inactive') {
+        filtered = allCuisinesData.filter(c => c.is_active === false);
+      } else if (filterType === 'custom') {
+        filtered = allCuisinesData.filter(c => !defaultCodes.includes(c.code));
+      }
+
+      renderCuisinesManagerGrid(filtered);
+    }
 
     async function loadCuisines() {
       try {
@@ -2087,8 +2207,9 @@
       } catch (err) {
         allCuisinesData = DEFAULT_CUISINES_FALLBACK;
       }
+      updateCuisineStatCards(allCuisinesData);
       renderCuisineMatrix(allCuisinesData.filter(c => c.is_active !== false));
-      renderCuisinesManagerGrid(allCuisinesData);
+      filterCuisinesByMetric(currentCuisineFilter);
     }
 
     function searchCuisinesManager(query) {
