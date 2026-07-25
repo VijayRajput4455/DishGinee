@@ -102,7 +102,7 @@ services:
   # 7. FastAPI Application Service
   app:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.api
     container_name: dishgenie_app
     restart: always
@@ -127,7 +127,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - ..:/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,7 +143,7 @@ services:
   # 8. Background Task Worker Service
   worker:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.worker
     container_name: dishgenie_worker
     restart: always
@@ -165,7 +165,7 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-""}
     volumes:
-      - .:/app
+      - ..:/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -181,7 +181,7 @@ services:
   # 9. Web Frontend UI & Reverse Proxy Gateway
   nginx:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.nginx
     container_name: dishgenie_nginx
     restart: always
