@@ -58,16 +58,19 @@ class RequestService:
             print(f"[RequestService] Warning: RabbitMQ task publishing returned False for Request #{request_obj.id}")
 
         # 2. Synchronous execution for immediate UI responsiveness (lazy import to prevent circular dependency)
-        from app.workers.recipe_worker import LLMRecipeWorker
-        recipe_worker = LLMRecipeWorker()
-        recipe_worker.process_recipe_task(
-            payload={
-                "request_id": request_obj.id,
-                "ingredients": ingredients_list,
-                "cuisine": cuisine,
-            },
-            db=self.db,
-        )
+        try:
+            from app.workers.recipe_worker import LLMRecipeWorker
+            recipe_worker = LLMRecipeWorker()
+            recipe_worker.process_recipe_task(
+                payload={
+                    "request_id": request_obj.id,
+                    "ingredients": ingredients_list,
+                    "cuisine": cuisine,
+                },
+                db=self.db,
+            )
+        except Exception as e:
+            print(f"[RequestService] Synchronous worker execution fallback info: {e}")
 
         return RequestResponse.model_validate(request_obj)
 

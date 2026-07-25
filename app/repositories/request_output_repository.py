@@ -29,19 +29,31 @@ class RequestOutputRepository(BaseRepository[RequestOutput]):
         output_obj = self.get_by_request_id(request_id)
 
         if output_obj is None:
-            output_obj = RequestOutput(
-                request_id=request_id,
-                ingredients=ingredients,
-                selected_recipe=selected_recipe,
-                cooking_guide=cooking_guide,
-            )
-            return self.create(output_obj)
+            try:
+                output_obj = RequestOutput(
+                    request_id=request_id,
+                    ingredients=ingredients,
+                    selected_recipe=selected_recipe,
+                    cooking_guide=cooking_guide,
+                )
+                return self.create(output_obj)
+            except Exception:
+                self.db.rollback()
+                output_obj = self.get_by_request_id(request_id)
 
-        if ingredients is not None:
-            output_obj.ingredients = ingredients
-        if selected_recipe is not None:
-            output_obj.selected_recipe = selected_recipe
-        if cooking_guide is not None:
-            output_obj.cooking_guide = cooking_guide
+        if output_obj is not None:
+            if ingredients is not None:
+                output_obj.ingredients = ingredients
+            if selected_recipe is not None:
+                output_obj.selected_recipe = selected_recipe
+            if cooking_guide is not None:
+                output_obj.cooking_guide = cooking_guide
+            return self.update(output_obj)
 
-        return self.update(output_obj)
+        output_obj = RequestOutput(
+            request_id=request_id,
+            ingredients=ingredients,
+            selected_recipe=selected_recipe,
+            cooking_guide=cooking_guide,
+        )
+        return self.create(output_obj)

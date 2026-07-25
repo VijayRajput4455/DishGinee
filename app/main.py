@@ -84,7 +84,14 @@ def root():
     """Root welcome endpoint serving DishGenie Web UI console."""
     index_file = os.path.join(frontend_dir, "index.html")
     if os.path.exists(index_file):
-        return FileResponse(index_file)
+        return FileResponse(
+            index_file,
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
     return {
         "message": "Welcome to DishGenie API! Access API documentation at /docs",
     }
