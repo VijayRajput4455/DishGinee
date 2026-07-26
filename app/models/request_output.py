@@ -34,6 +34,16 @@ class RequestOutput(BaseModel):
         nullable=True,
     )
 
+    rating: Mapped[float | None] = mapped_column(
+        nullable=True,
+        default=None,
+    )
+
+    rating_comment: Mapped[str | None] = mapped_column(
+        nullable=True,
+        default=None,
+    )
+
     request = relationship(
         "Request",
         back_populates="output",

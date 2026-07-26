@@ -607,6 +607,255 @@
     .btn-action-hero:active {
       transform: scale(0.97);
     }
+
+    /* Chef Genie Animated Thinking Loader */
+    .chef-thinking-container {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 2.8rem 2.2rem;
+      background: linear-gradient(135deg, rgba(24, 30, 48, 0.75) 0%, rgba(14, 19, 31, 0.9) 100%);
+      border: 1px solid rgba(255, 107, 0, 0.35);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .chef-character-box {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 1.25rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chef-icon-animated {
+      font-size: 3.8rem;
+      animation: chefBounce 2s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 15px rgba(255, 107, 0, 0.6));
+    }
+
+    @keyframes chefBounce {
+      0% { transform: translateY(0) scale(1) rotate(0deg); }
+      50% { transform: translateY(-8px) scale(1.05) rotate(-3deg); }
+      100% { transform: translateY(4px) scale(0.98) rotate(3deg); }
+    }
+
+    .thought-bubbles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .bubble {
+      position: absolute;
+      font-size: 1.3rem;
+      opacity: 0;
+      animation: floatUp 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .bubble.b1 { left: -10px; top: 30px; animation-delay: 0s; }
+    .bubble.b2 { right: -15px; top: 20px; animation-delay: 0.6s; }
+    .bubble.b3 { left: 15px; top: -10px; animation-delay: 1.2s; }
+    .bubble.b4 { right: 10px; top: -15px; animation-delay: 1.8s; }
+    .bubble.b5 { right: 35px; top: -25px; animation-delay: 2.2s; }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(15px) scale(0.6); }
+      40% { opacity: 1; transform: translateY(-10px) scale(1.1); }
+      80% { opacity: 0.8; transform: translateY(-30px) scale(0.9); }
+      100% { opacity: 0; transform: translateY(-45px) scale(0.5); }
+    }
+
+    .thinking-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 0.35rem;
+      background: linear-gradient(135deg, #FFFFFF 0%, #FFD699 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .thinking-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .thinking-progress-bar {
+      width: 260px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid rgba(255, 107, 0, 0.3);
+    }
+
+    .thinking-progress-fill {
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, #FF6B00 0%, #FFB800 50%, #FF6B00 100%);
+      border-radius: 10px;
+      animation: progressShimmer 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes progressShimmer {
+      0% { width: 15%; margin-left: 0%; }
+      100% { width: 60%; margin-left: 40%; }
+    }
+
+    /* Stage 2 Cooking Prediction Animation Extensions */
+    .stage2-cooking-loader {
+      border-color: rgba(255, 184, 0, 0.45);
+      background: linear-gradient(135deg, rgba(28, 20, 14, 0.75) 0%, rgba(14, 19, 31, 0.9) 100%);
+    }
+
+    .cooking-pot-animation {
+      position: relative;
+      display: inline-block;
+    }
+
+    .flame-particle {
+      position: absolute;
+      font-size: 1.2rem;
+      bottom: 10px;
+      animation: flameRise 1.6s ease-in-out infinite alternate;
+    }
+    .flame-particle.f1 { left: -20px; animation-delay: 0s; }
+    .flame-particle.f2 { right: -20px; animation-delay: 0.5s; }
+    .flame-particle.f3 { top: -10px; right: -30px; animation-delay: 0.9s; }
+
+    @keyframes flameRise {
+      0% { transform: translateY(0) scale(0.9); opacity: 0.6; }
+      100% { transform: translateY(-12px) scale(1.25); opacity: 1; filter: drop-shadow(0 0 10px #FF6B00); }
+    }
+
+    .loading-step-badges {
+      display: flex;
+      justify-content: center;
+      gap: 0.85rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .loading-badge {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 0.5rem 1.25rem;
+      border-radius: 30px;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      animation: gentlePillFloat 2.6s ease-in-out infinite alternate;
+    }
+
+    .loading-badge:nth-child(1) { animation-delay: 0s; }
+    .loading-badge:nth-child(2) { animation-delay: 0.35s; }
+    .loading-badge:nth-child(3) { animation-delay: 0.7s; }
+    .loading-badge:nth-child(4) { animation-delay: 1.05s; }
+
+    @keyframes gentlePillFloat {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-4px); }
+    }
+
+    .loading-badge .badge-icon {
+      font-size: 1.05rem;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+
+    .loading-badge.active {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.35) 0%, rgba(255, 184, 0, 0.45) 100%);
+      border: 1px solid #FF6B00;
+      color: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(255, 107, 0, 0.55), 0 0 14px rgba(255, 184, 0, 0.4);
+      animation: sleekGlowPulse 1.4s ease-in-out infinite alternate;
+      z-index: 5;
+    }
+
+    @keyframes sleekGlowPulse {
+      0% { box-shadow: 0 4px 16px rgba(255, 107, 0, 0.4); border-color: #FF6B00; }
+      100% { box-shadow: 0 6px 24px rgba(255, 184, 0, 0.7); border-color: #FFB800; }
+    }
+
+    .loading-badge.done {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.55);
+      color: #10B981;
+    }
+
+    /* Recipe End Rating & Action Bar */
+    .star-rating-box {
+      display: flex;
+      gap: 0.2rem;
+      cursor: pointer;
+      font-size: 1.4rem;
+    }
+    .star-rating-box .star {
+      color: rgba(255, 255, 255, 0.2);
+      transition: all 0.2s ease;
+    }
+    .star-rating-box .star.filled,
+    .star-rating-box .star.active {
+      color: #FFB800;
+      text-shadow: 0 0 10px rgba(255, 184, 0, 0.6);
+      transform: scale(1.12);
+    }
+    .star-rating-box .star:hover {
+      color: #FFB800;
+      transform: scale(1.2);
+    }
+
+    .recipe-end-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 0.55rem 1.15rem;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+    }
+    .recipe-end-btn.btn-save:hover {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: #10B981;
+      color: #10B981;
+      transform: translateY(-1px);
+    }
+    .recipe-end-btn.btn-share:hover {
+      background: rgba(59, 130, 246, 0.16);
+      border-color: #3B82F6;
+      color: #60A5FA;
+      transform: translateY(-1px);
+    }
+    .recipe-end-btn.btn-cook-again:hover {
+      background: rgba(255, 107, 0, 0.18);
+      border-color: #FF6B00;
+      color: #FF6B00;
+      transform: translateY(-1px);
+    }
     .hero-request-card::before {
       content: '';
       position: absolute;
@@ -1593,7 +1842,7 @@
               <button class="btn-view-all" style="font-size:0.7rem;">View all</button>
             </div>
 
-            <div class="popular-recipes-list">
+            <div class="popular-recipes-list" id="popular-recipes-container">
               <div class="popular-card">
                 <img src="/static/Background.png" class="popular-img" alt="Prawns">
                 <div class="popular-info">
@@ -2764,12 +3013,55 @@
       const cardsContainer = document.getElementById('recipe-cards-container');
       
       resultsWrapper.style.display = 'block';
+      const rawText = ingredientsText || 'Tomatoes, Garlic, Butter';
+      const ingList = rawText.split(',').map(i => i.trim()).filter(Boolean);
+      const b1T = ingList[0] ? ingList[0] : 'Smart Detection';
+      const b1I = ingList[0] ? '✨' : '👁️';
+      const b2T = ingList[1] ? ingList[1] : '5 Candidates';
+      const b2I = ingList[1] ? '🧄' : '🍲';
+      const b3T = ingList[2] ? ingList[2] : 'Macro Estimates';
+      const b3I = ingList[2] ? '🧈' : '🥗';
+      const b4T = ingList[3] ? ingList[3] : (ingList.length > 3 ? `+${ingList.length - 3} Extra` : 'Ollama AI');
+      const b4I = ingList[3] ? '🧂' : (ingList.length > 3 ? '➕' : '👨‍🍳');
+
       cardsContainer.innerHTML = `
-        <div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--accent-orange); font-weight:800;">
-          <div style="font-size:2rem; margin-bottom:0.75rem; animation: pulse 1s infinite alternate;">🍳</div>
-          Analyzing ingredients & generating 5 recipe candidates via Ollama LLM...
+        <div class="chef-thinking-container">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">👨‍🍳</div>
+              <div class="thought-bubbles">
+                <span class="bubble b1">🍅</span>
+                <span class="bubble b2">🥔</span>
+                <span class="bubble b3">🧄</span>
+                <span class="bubble b4">✨</span>
+                <span class="bubble b5">💭</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="thinking-title">Chef Genie is thinking about your ingredients... ✦</h3>
+          <p class="thinking-subtitle" id="stage1-live-ticker">
+            Analyzing ingredients & crafting 5 recipe candidates via Ollama LLM...
+          </p>
+
+          <div class="thinking-progress-bar">
+            <div class="thinking-progress-fill"></div>
+          </div>
+
+          <!-- Dynamic Ingredient Item Badges with Moving Active Pulse Animation -->
+          <div class="loading-step-badges">
+            <div class="loading-badge active" id="s1badge-1"><span class="badge-icon">${b1I}</span> ${b1T}</div>
+            <div class="loading-badge" id="s1badge-2"><span class="badge-icon">${b2I}</span> ${b2T}</div>
+            <div class="loading-badge" id="s1badge-3"><span class="badge-icon">${b3I}</span> ${b3T}</div>
+            <div class="loading-badge" id="s1badge-4"><span class="badge-icon">${b4I}</span> ${b4T}</div>
+          </div>
         </div>
       `;
+
+      startStage1Ticker();
 
       try {
         let endpoint = `${backendUrl}/requests/text`;
@@ -2806,7 +3098,6 @@
           const reqId = json.data.id;
           pollForStage1(reqId);
         } else {
-          // If creation succeeded partially or returns offline data, fall back to mock ID
           pollForStage1(Date.now());
         }
       } catch (err) {
@@ -2814,49 +3105,35 @@
       }
     }
 
-    function generateDynamicFallbackRecipes(inputText, cuisine) {
-      const cleanInput = inputText ? inputText.split(',').map(i => i.trim()).filter(Boolean) : ['Ingredients'];
-      const main = cleanInput[0] ? cleanInput[0].charAt(0).toUpperCase() + cleanInput[0].slice(1) : 'Delight';
-      const sec = cleanInput[1] ? cleanInput[1].charAt(0).toUpperCase() + cleanInput[1].slice(1) : 'Special';
-      const cPrefix = cuisine ? `${cuisine} ` : '';
+    let stage1TickerInterval = null;
 
-      return [
-        {
-          title: `${cPrefix}Garlic Butter ${main} Special`,
-          description: `A rich, savory ${cPrefix.toLowerCase()}dish combining tender ${main.toLowerCase()} infused with sautéed garlic, herbs, and melted butter.`,
-          matched_ingredients: cleanInput,
-          prep_time: "20 mins",
-          difficulty: "Easy"
-        },
-        {
-          title: `Creamy ${cPrefix}${main} & ${sec} Delight`,
-          description: `Rich and comforting dish featuring simmered ${main.toLowerCase()} cooked in aromatic spices and velvety sauce.`,
-          matched_ingredients: cleanInput,
-          prep_time: "25 mins",
-          difficulty: "Medium"
-        },
-        {
-          title: `Crispy Pan-Seared ${main} Sauté`,
-          description: `Sizzling skillet meal pan-seared to golden perfection with herbs, garlic, and cracked pepper.`,
-          matched_ingredients: cleanInput,
-          prep_time: "15 mins",
-          difficulty: "Easy"
-        },
-        {
-          title: `Spiced ${cPrefix}${main} Fusion Bowl`,
-          description: `High-flavor dish with ${main.toLowerCase()} cooked with fresh onions, tomatoes, and warm spices.`,
-          matched_ingredients: cleanInput,
-          prep_time: "20 mins",
-          difficulty: "Medium"
-        },
-        {
-          title: `Rustic ${main} Herb & Vegetable Stew`,
-          description: `Hearty comfort dish featuring ${main.toLowerCase()} stewed in a fragrant garlic broth.`,
-          matched_ingredients: cleanInput,
-          prep_time: "20 mins",
-          difficulty: "Easy"
-        }
+    function startStage1Ticker() {
+      if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+      const messages = [
+        "Analyzing ingredient lists & active diet preferences...",
+        "Querying Ollama LLM for 5 unique gourmet recipe candidates...",
+        "Calculating estimated preparation times & difficulty levels...",
+        "Synthesizing 5 recipe candidate cards for your selection..."
       ];
+      let stepIdx = 0;
+      stage1TickerInterval = setInterval(() => {
+        const textEl = document.getElementById('stage1-live-ticker');
+        if (textEl) textEl.innerText = messages[stepIdx];
+
+        const activeId = stepIdx + 1;
+        for (let i = 1; i <= 4; i++) {
+          const badge = document.getElementById(`s1badge-${i}`);
+          if (!badge) continue;
+          if (i === activeId) {
+            badge.className = 'loading-badge active';
+          } else if (i < activeId) {
+            badge.className = 'loading-badge done';
+          } else {
+            badge.className = 'loading-badge';
+          }
+        }
+        stepIdx = (stepIdx + 1) % 4;
+      }, 800);
     }
 
     async function pollForStage1(reqId) {
@@ -2882,14 +3159,17 @@
 
           if (dbRecipes && dbRecipes.length > 0) {
             clearInterval(interval);
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
             renderStage1Cards(reqId, dbRecipes);
           } else if (attempts >= 15) {
             clearInterval(interval);
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
             renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine));
           }
         } catch (e) {
           if (attempts >= 15) {
             clearInterval(interval);
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
             renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine));
           }
         }
@@ -2933,16 +3213,81 @@
       });
     }
 
-    async function selectRecipeChoice(reqId, title) {
+    let stage2TickerInterval = null;
+
+    function renderStage2Loader(title) {
       const guideWrapper = document.getElementById('guide-wrapper');
       guideWrapper.style.display = 'block';
       guideWrapper.innerHTML = `
-        <div class="glass-card" style="text-align:center; padding:2rem; color:var(--accent-gold);">
-          <div style="font-size:2rem; margin-bottom:0.75rem; animation: pulse 1s infinite alternate;">👨‍🍳</div>
-          Crafting Master Cooking Guide for <strong>"${title}"</strong> via Ollama...
+        <div class="chef-thinking-container stage2-cooking-loader">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">👨‍🍳</div>
+              <div class="thought-bubbles">
+                <span class="bubble b1">🍲</span>
+                <span class="bubble b2">🧂</span>
+                <span class="bubble b3">🧄</span>
+                <span class="bubble b4">🍳</span>
+                <span class="bubble b5">✨</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="thinking-title">
+            Chef Genie is preparing master guide for <span style="color:var(--accent-gold); font-family:var(--font-heading);">"${title}"</span> ✦
+          </h3>
+          <p class="thinking-subtitle" id="stage2-live-ticker">
+            Calculating precise measurements & step-by-step instructions...
+          </p>
+
+          <div class="thinking-progress-bar">
+            <div class="thinking-progress-fill" style="background: linear-gradient(90deg, #10B981 0%, #FFB800 50%, #FF6B00 100%);"></div>
+          </div>
+
+          <div class="loading-step-badges">
+            <div class="loading-badge active" id="lbadge-1"><span>📏</span> Measurements</div>
+            <div class="loading-badge" id="lbadge-2"><span>📊</span> Macros</div>
+            <div class="loading-badge" id="lbadge-3"><span>📋</span> Steps</div>
+            <div class="loading-badge" id="lbadge-4"><span>💡</span> Chef Tips</div>
+          </div>
         </div>
       `;
       guideWrapper.scrollIntoView({ behavior: 'smooth' });
+
+      if (stage2TickerInterval) clearInterval(stage2TickerInterval);
+      const messages = [
+        "Calculating exact ingredient measurements & prep times...",
+        "Computing nutritional macros: Calories, Protein, Carbs & Fats...",
+        "Structuring step-by-step master cooking instructions...",
+        "Injecting Chef's Pro Tips & spice substitution secrets...",
+        "Finalizing your gourmet master guide..."
+      ];
+      let stepIdx = 0;
+      stage2TickerInterval = setInterval(() => {
+        const textEl = document.getElementById('stage2-live-ticker');
+        if (textEl) textEl.innerText = messages[stepIdx];
+
+        const activeId = stepIdx + 1;
+        for (let i = 1; i <= 4; i++) {
+          const badge = document.getElementById(`lbadge-${i}`);
+          if (!badge) continue;
+          if (i === activeId) {
+            badge.className = 'loading-badge active';
+          } else if (i < activeId) {
+            badge.className = 'loading-badge done';
+          } else {
+            badge.className = 'loading-badge';
+          }
+        }
+        stepIdx = (stepIdx + 1) % 4;
+      }, 800);
+    }
+
+    async function selectRecipeChoice(reqId, title) {
+      renderStage2Loader(title);
 
       try {
         const res = await fetch(`${backendUrl}/requests/${reqId}/select-recipe`, {
@@ -2953,7 +3298,8 @@
         const json = await res.json();
         if (json.success) {
           if (json.data && json.data.cooking_guide) {
-            renderStage2Guide(json.data.cooking_guide);
+            if (stage2TickerInterval) clearInterval(stage2TickerInterval);
+            renderStage2Guide(json.data.cooking_guide, reqId);
           } else {
             pollForStage2(reqId, title);
           }
@@ -3006,7 +3352,6 @@
     }
 
     async function pollForStage2(reqId, title) {
-      const guideWrapper = document.getElementById('guide-wrapper');
       let attempts = 0;
 
       const interval = setInterval(async () => {
@@ -3019,23 +3364,27 @@
 
           if (cookingGuide && (cookingGuide.steps || cookingGuide.title || cookingGuide.recipe_title)) {
             clearInterval(interval);
-            renderStage2Guide(cookingGuide);
+            if (stage2TickerInterval) clearInterval(stage2TickerInterval);
+            renderStage2Guide(cookingGuide, reqId);
           } else if (attempts >= 15) {
             clearInterval(interval);
-            renderStage2Guide(generateDynamicFallbackGuide(title));
+            if (stage2TickerInterval) clearInterval(stage2TickerInterval);
+            renderStage2Guide(generateDynamicFallbackGuide(title), reqId);
           }
         } catch (e) {
           if (attempts >= 15) {
             clearInterval(interval);
-            renderStage2Guide(generateDynamicFallbackGuide(title));
+            if (stage2TickerInterval) clearInterval(stage2TickerInterval);
+            renderStage2Guide(generateDynamicFallbackGuide(title), reqId);
           }
         }
       }, 1500);
     }
 
-    function renderStage2Guide(guide) {
+    function renderStage2Guide(guide, reqId) {
       const guideWrapper = document.getElementById('guide-wrapper');
       const recipeTitle = guide.recipe_title || guide.title || 'Selected Recipe';
+      const targetReqId = reqId || guide.request_id || 0;
       const summary = guide.summary || guide.description || 'A masterfully crafted culinary creation.';
       const prepTime = guide.prep_time_minutes || guide.prep_time || '15';
       const cookTime = guide.cook_time_minutes || guide.cook_time || '20';
@@ -3147,8 +3496,111 @@
               </div>
             </div>
           </div>
+
+          <!-- Recipe End Action Bar & Rating Card -->
+          <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; background:rgba(0,0,0,0.35); border:1px solid var(--border); border-radius:16px; padding:1.25rem 1.5rem;">
+              
+              <!-- Star Rating Section -->
+              <div style="display:flex; align-items:center; gap:0.85rem; flex-wrap:wrap;">
+                <div style="font-weight:800; font-size:0.88rem; color:var(--text-primary);">
+                  Rate this recipe:
+                </div>
+                <div class="star-rating-box" id="star-box-${recipeTitle.replace(/[^a-zA-Z0-9]/g, '')}">
+                  <span class="star filled" onclick="setRecipeRating(this, 1, ${targetReqId})">★</span>
+                  <span class="star filled" onclick="setRecipeRating(this, 2, ${targetReqId})">★</span>
+                  <span class="star filled" onclick="setRecipeRating(this, 3, ${targetReqId})">★</span>
+                  <span class="star filled" onclick="setRecipeRating(this, 4, ${targetReqId})">★</span>
+                  <span class="star" onclick="setRecipeRating(this, 5, ${targetReqId})">★</span>
+                </div>
+                <span class="rating-feedback-text" id="star-text-${recipeTitle.replace(/[^a-zA-Z0-9]/g, '')}" style="font-size:0.82rem; font-weight:800; color:var(--accent-gold);">
+                  4.0 / 5 (Very Good)
+                </span>
+              </div>
+
+              <!-- Interactive Action Buttons -->
+              <div style="display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap;">
+                <button class="recipe-end-btn btn-save" onclick="saveRecipeToFavorites('${recipeTitle.replace(/'/g, "\\'")}')">
+                  <span>💾</span> Save
+                </button>
+                <button class="recipe-end-btn btn-share" onclick="shareRecipe('${recipeTitle.replace(/'/g, "\\'")}')">
+                  <span>🔗</span> Share
+                </button>
+                <button class="recipe-end-btn btn-cook-again" onclick="cookAgain()">
+                  <span>🔄</span> Cook Again
+                </button>
+              </div>
+
+            </div>
+          </div>
         </div>
       `;
+    }
+
+    async function setRecipeRating(starEl, rating, reqId) {
+      const parent = starEl.parentElement;
+      if (!parent) return;
+      const stars = parent.querySelectorAll('.star');
+      stars.forEach((s, idx) => {
+        if (idx < rating) {
+          s.classList.add('filled');
+        } else {
+          s.classList.remove('filled');
+        }
+      });
+      const boxId = parent.id;
+      const textId = boxId.replace('star-box-', 'star-text-');
+      const textEl = document.getElementById(textId);
+      const labels = ['1.0 / 5 (Saved to DB!)', '2.0 / 5 (Saved to DB!)', '3.0 / 5 (Saved to DB!)', '4.0 / 5 (Saved to DB!)', "5.0 / 5 (Chef's Masterpiece! Saved to DB! ⭐)"];
+      if (textEl) {
+        textEl.innerText = labels[rating - 1] || `${rating}.0 / 5 (Saved to DB!)`;
+      }
+
+      if (reqId) {
+        try {
+          const res = await fetch(`${backendUrl}/requests/${reqId}/rate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating: rating })
+          });
+          const json = await res.json();
+          if (json.success) {
+            console.log(`Rating of ${rating} stars saved to DB for request #${reqId}!`);
+            loadPopularRecipes();
+          }
+        } catch (e) {
+          console.error('Failed to save rating to DB:', e);
+        }
+      }
+    }
+
+    function saveRecipeToFavorites(title) {
+      let favs = JSON.parse(localStorage.getItem('dishgenie_favorites') || '[]');
+      if (!favs.includes(title)) {
+        favs.push(title);
+        localStorage.setItem('dishgenie_favorites', JSON.stringify(favs));
+        alert(`Saved "${title}" to your Favorites! 💾`);
+      } else {
+        alert(`"${title}" is already saved in your Favorites! ❤️`);
+      }
+    }
+
+    function shareRecipe(title) {
+      const shareUrl = window.location.origin + '?recipe=' + encodeURIComponent(title);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          alert(`Recipe link copied to clipboard! 🔗\n${shareUrl}`);
+        }).catch(() => {
+          alert(`Share Link for "${title}":\n${shareUrl}`);
+        });
+      } else {
+        alert(`Share Link for "${title}":\n${shareUrl}`);
+      }
+    }
+
+    function cookAgain() {
+      switchView('create');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function searchRecipes(query) {
@@ -3166,9 +3618,34 @@
       const cardsContainer = document.getElementById('recipe-cards-container');
       resultsWrapper.style.display = 'block';
       cardsContainer.innerHTML = `
-        <div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--accent-orange); font-weight:800;">
-          <div style="font-size:2rem; margin-bottom:0.75rem; animation: pulse 1s infinite alternate;">🍳</div>
-          Fetching recipe options for Request #${id}...
+        <div class="chef-thinking-container">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">👨‍🍳</div>
+              <div class="thought-bubbles">
+                <span class="bubble b1">🍅</span>
+                <span class="bubble b2">🥔</span>
+                <span class="bubble b3">🧄</span>
+                <span class="bubble b4">✨</span>
+                <span class="bubble b5">💭</span>
+              </div>
+            </div>
+          </div>
+          <h3 class="thinking-title">Fetching recipe options for Request #${id}... ✦</h3>
+          <p class="thinking-subtitle" id="stage1-live-ticker">Retrieving generated recipes and master cooking instructions...</p>
+          <div class="thinking-progress-bar">
+            <div class="thinking-progress-fill"></div>
+          </div>
+
+          <div class="loading-step-badges">
+            <div class="loading-badge active" id="s1badge-1"><span>👁️</span> Smart Detection</div>
+            <div class="loading-badge" id="s1badge-2"><span>🍲</span> 5 Candidates</div>
+            <div class="loading-badge" id="s1badge-3"><span>🥗</span> Macro Estimates</div>
+            <div class="loading-badge" id="s1badge-4"><span>✨</span> Ollama LLM</div>
+          </div>
         </div>
       `;
       pollForStage1(id);
@@ -3207,6 +3684,64 @@
         }
       }
     }
+    async function loadDashboardStats() {
+      try {
+        const res = await fetch(`${backendUrl}/requests/stats`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            const data = json.data;
+            const totalEl = document.getElementById('stat-total-num');
+            const completedEl = document.getElementById('stat-completed-num');
+            const progressEl = document.getElementById('stat-progress-num');
+            const recipesEl = document.getElementById('stat-recipes-num');
+
+            if (totalEl) totalEl.innerText = data.total_requests;
+            if (completedEl) completedEl.innerText = data.completed_requests;
+            if (progressEl) progressEl.innerText = data.in_progress_requests;
+            if (recipesEl) recipesEl.innerText = data.total_recipes;
+          }
+        }
+      } catch (err) {
+        console.error('Error loading dashboard stats:', err);
+      }
+    }
+    async function loadPopularRecipes() {
+      try {
+        const res = await fetch(`${backendUrl}/requests/popular`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            const container = document.getElementById('popular-recipes-container');
+            if (!container) return;
+            container.innerHTML = '';
+            json.data.forEach(item => {
+              const card = document.createElement('div');
+              card.className = 'popular-card';
+              card.innerHTML = `
+                <img src="/static/Background.png" class="popular-img" alt="${item.title}">
+                <div class="popular-info">
+                  <div class="popular-name">${item.title}</div>
+                  <div class="popular-meta">★ ${item.rating} (${item.rating_count}) · ⏱️ ${item.cook_time} · ${item.calories}</div>
+                  <span class="popular-tag">${item.cuisine}</span>
+                </div>
+                <div class="heart-btn" onclick="saveRecipeToFavorites('${item.title.replace(/'/g, "\\'")}')">❤️</div>
+              `;
+              container.appendChild(card);
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading popular recipes:', err);
+      }
+    }
+
+    loadDashboardStats();
+    setInterval(loadDashboardStats, 10000);
+
+    loadPopularRecipes();
+    setInterval(loadPopularRecipes, 15000);
+
     setInterval(pollWorkerStatus, 5000);
     pollWorkerStatus();
   </script>

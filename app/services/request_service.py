@@ -228,3 +228,18 @@ class RequestService:
         # Re-fetch updated output record
         updated_output = self.out_repo.get_by_request_id(request_id)
         return RequestOutputResponse.model_validate(updated_output or output_obj)
+
+    def get_stats(self) -> dict[str, int]:
+        """Fetch live PostgreSQL database statistics metrics."""
+        return self.req_repo.get_stats()
+
+    def rate_request(self, request_id: int, rating: float, comment: str | None = None) -> RequestOutputResponse | None:
+        """Save user star rating and comment to PostgreSQL database."""
+        out_obj = self.req_repo.rate_request(request_id=request_id, rating=rating, comment=comment)
+        if out_obj is None:
+            return None
+        return RequestOutputResponse.model_validate(out_obj)
+
+    def get_popular_recipes(self, limit: int = 6) -> list[dict[str, Any]]:
+        """Fetch popular recipe cards sorted by DB ratings."""
+        return self.req_repo.get_popular_recipes(limit=limit)

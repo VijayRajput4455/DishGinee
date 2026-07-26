@@ -53,6 +53,13 @@ class CookingGuide(BaseModel):
     substitutions: list[str] | None = Field(default=None, description="Suggested ingredient substitutions")
 
 
+class RecipeRatingRequest(BaseModel):
+    """Payload schema for submitting recipe rating."""
+
+    rating: float = Field(..., ge=1.0, le=5.0, description="Star rating score between 1.0 and 5.0")
+    comment: str | None = Field(default=None, description="Optional user review comment")
+
+
 class RequestOutputResponse(BaseModel):
     """Response DTO for RequestOutput model."""
 
@@ -63,5 +70,7 @@ class RequestOutputResponse(BaseModel):
     ingredients: dict[str, Any] | list[Any] | None = Field(default=None, description="Raw/extracted ingredients data")
     selected_recipe: dict[str, Any] | None = Field(default=None, description="Selected recipe summary payload")
     cooking_guide: dict[str, Any] | None = Field(default=None, description="Full generated cooking guide payload")
+    rating: float | None = Field(default=None, description="User star rating score (1.0 to 5.0)")
+    rating_comment: str | None = Field(default=None, description="Optional user review comment")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")

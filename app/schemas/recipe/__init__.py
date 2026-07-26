@@ -4,6 +4,7 @@ from app.schemas.recipe.recipe_response import (
     DetectedIngredient,
     MacroNutrients,
     RecipeOption,
+    RecipeRatingRequest,
     RequestOutputResponse,
 )
 from app.schemas.recipe.recipe_selection import RecipeSelectRequest
@@ -16,4 +17,5 @@ __all__ = [
     "CookingGuide",
     "RequestOutputResponse",
     "RecipeSelectRequest",
+    "RecipeRatingRequest",
 ]

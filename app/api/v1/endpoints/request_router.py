@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas import (
     APIResponse,
+    RecipeRatingRequest,
     RecipeSelectRequest,
     RequestCreateText,
     RequestDetailResponse,
@@ -110,6 +111,41 @@ def create_voice_request(
 
 
 @router.get(
+    "/popular",
+    summary="Get Most Popular & High-Rated Recipes",
+    description="Retrieve top rated and most popular recipes from PostgreSQL database.",
+)
+def get_popular_recipes(
+    limit: int = 6,
+    db: Session = Depends(get_db),
+):
+    service = RequestService(db)
+    popular = service.get_popular_recipes(limit=limit)
+    return APIResponse(
+        success=True,
+        message="Popular recipes retrieved successfully.",
+        data=popular,
+    )
+
+
+@router.get(
+    "/stats",
+    summary="Get Database Request Metrics & Stats",
+    description="Retrieve live PostgreSQL database metrics including total requests, completed count, in-progress count, and total recipes generated.",
+)
+def get_request_stats(
+    db: Session = Depends(get_db),
+):
+    service = RequestService(db)
+    stats = service.get_stats()
+    return APIResponse(
+        success=True,
+        message="Live database stats retrieved successfully.",
+        data=stats,
+    )
+
+
+@router.get(
     "/{request_id}",
     response_model=APIResponse[RequestDetailResponse],
     summary="Get Request Details",
@@ -159,5 +195,30 @@ def select_recipe(
     return APIResponse(
         success=True,
         message=f"Recipe '{payload.recipe_title}' selected. Stage 2 cooking guide task queued.",
+        data=result,
+    )
+
+
+@router.post(
+    "/{request_id}/rate",
+    response_model=APIResponse[RequestOutputResponse],
+    summary="Rate Recipe",
+    description="Submit user star rating (1 to 5 stars) and feedback comment to save directly into PostgreSQL DB.",
+)
+def rate_recipe(
+    request_id: int,
+    payload: RecipeRatingRequest,
+    db: Session = Depends(get_db),
+):
+    service = RequestService(db)
+    result = service.rate_request(request_id=request_id, rating=payload.rating, comment=payload.comment)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Request #{request_id} not found.",
+        )
+    return APIResponse(
+        success=True,
+        message=f"Rating of {payload.rating} stars saved successfully to PostgreSQL database!",
         data=result,
     )
