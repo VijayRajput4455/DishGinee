@@ -3538,40 +3538,76 @@
 
     function generateDynamicFallbackGuide(title) {
       const recipeTitle = title || "Selected Gourmet Recipe";
+      const titleLower = recipeTitle.toLowerCase();
+
+      if (titleLower.includes('garlic bread')) {
+        return {
+          recipe_title: "Garlic Bread",
+          summary: "Crispy oven-baked garlic bread topped with melted butter, garlic paste, and Italian herbs.",
+          prep_time_minutes: 10,
+          cook_time_minutes: 12,
+          ingredients: [
+            "1 French baguette or Italian loaf, halved",
+            "4 tbsp salted butter, softened",
+            "4 cloves garlic, finely minced",
+            "1 tbsp fresh parsley, chopped",
+            "1/2 cup mozzarella cheese (optional)"
+          ],
+          nutritional_information: { calories: 340, protein_g: 9.0, carbs_g: 38.0, fats_g: 16.0 },
+          substitutions: ["Use olive oil instead of butter for dairy-free.", "Add chili flakes for extra heat."],
+          steps: [
+            { step_number: 1, duration_minutes: 3, instruction: "Preheat oven to 375°F (190°C). Slice baguette horizontally into two halves.", equipment: ["Oven", "Bread Knife"] },
+            { step_number: 2, duration_minutes: 4, instruction: "In a bowl, mix softened butter, minced garlic, chopped parsley, and oregano.", equipment: ["Mixing Bowl", "Butter Knife"] },
+            { step_number: 3, duration_minutes: 2, instruction: "Spread garlic butter over cut sides of bread. Top with mozzarella if desired.", equipment: ["Baking Sheet"] },
+            { step_number: 4, duration_minutes: 10, instruction: "Bake for 10-12 minutes until bread is crispy and cheese is melted golden brown.", equipment: ["Oven", "Cutting Board"] }
+          ]
+        };
+      }
+
+      if (titleLower.includes('paneer') || titleLower.includes('butter masala')) {
+        return {
+          recipe_title: "Paneer Butter Masala",
+          summary: "Cottage cheese cubes simmered in a velvety tomato, butter, and cashew gravy.",
+          prep_time_minutes: 15,
+          cook_time_minutes: 20,
+          ingredients: [
+            "250g Paneer (Cottage cheese), cubed",
+            "3 ripe Tomatoes, pureed",
+            "2 tbsp Butter + 1 tbsp Oil",
+            "1 tbsp Ginger-garlic paste",
+            "2 tbsp Heavy cream or cashew paste"
+          ],
+          nutritional_information: { calories: 420, protein_g: 16.0, carbs_g: 18.0, fats_g: 32.0 },
+          substitutions: ["Substitute Paneer with Tofu for a vegan version.", "Use cashew paste instead of cream."],
+          steps: [
+            { step_number: 1, duration_minutes: 5, instruction: "Puree tomatoes, ginger, and garlic into a smooth sauce. Cube paneer into bite-sized pieces.", equipment: ["Blender", "Knife"] },
+            { step_number: 2, duration_minutes: 7, instruction: "Melt butter with oil in pan. Add ginger-garlic paste and tomato puree; cook until oil separates.", equipment: ["Kadhai / Pan", "Spatula"] },
+            { step_number: 3, duration_minutes: 3, instruction: "Add spices and stir in cream to form a smooth velvety gravy.", equipment: ["Pan"] },
+            { step_number: 4, duration_minutes: 5, instruction: "Add paneer cubes, simmer gently for 5 minutes, garnish with kasuri methi and serve hot.", equipment: ["Serving Dish"] }
+          ]
+        };
+      }
+
+      const words = recipeTitle.split(' ').filter(w => w.length > 2);
+      const mainComp = words[0] || 'Main Ingredient';
+
       return {
         recipe_title: recipeTitle,
         summary: `A masterfully crafted culinary creation for "${recipeTitle}".`,
         prep_time_minutes: 15,
         cook_time_minutes: 20,
-        nutritional_information: {
-          calories: 410,
-          protein_g: 15.5,
-          carbs_g: 48.0,
-          fats_g: 16.5
-        },
-        substitutions: [
-          "Adjust spices and seasonings according to personal preference.",
-          "Substitute olive oil or ghee for butter if preferred."
+        ingredients: [
+          `Fresh ${mainComp} (key component)`,
+          "Aromatic herbs & spices",
+          "2 tbsp Butter or Olive oil",
+          "Minced garlic & seasonings"
         ],
+        nutritional_information: { calories: 410, protein_g: 15.5, carbs_g: 48.0, fats_g: 16.5 },
+        substitutions: ["Adjust spices and seasonings according to personal preference.", "Substitute olive oil or ghee for butter if preferred."],
         steps: [
-          {
-            step_number: 1,
-            duration_minutes: 5,
-            instruction: `Prep ingredients by washing and chopping fresh tomatoes, potatoes, garlic, and seasonings for ${recipeTitle}.`,
-            equipment: ["Cutting Board", "Chef Knife"]
-          },
-          {
-            step_number: 2,
-            duration_minutes: 5,
-            instruction: `Melt butter in skillet, add garlic and aromatic spices, simmering over medium flame until fragrant.`,
-            equipment: ["Skillet", "Wooden Spoon"]
-          },
-          {
-            step_number: 3,
-            duration_minutes: 10,
-            instruction: `Combine main ingredients with butter sauce and simmer gently until rich, tender, and hot.`,
-            equipment: ["Skillet", "Serving Dish"]
-          }
+          { step_number: 1, duration_minutes: 5, instruction: `Prep ingredients by washing and slicing fresh ${mainComp} and seasonings for ${recipeTitle}.`, equipment: ["Cutting Board", "Chef Knife"] },
+          { step_number: 2, duration_minutes: 5, instruction: `Melt butter in skillet, add garlic and aromatic spices, simmering over medium flame until fragrant.`, equipment: ["Skillet", "Wooden Spoon"] },
+          { step_number: 3, duration_minutes: 10, instruction: `Combine ${mainComp.toLowerCase()} with seasonings and simmer gently until rich, tender, and hot.`, equipment: ["Skillet", "Serving Dish"] }
         ]
       };
     }
