@@ -246,8 +246,9 @@
     .main-content {
       margin-left: 235px;
       flex: 1;
+      width: calc(100% - 235px);
+      max-width: 100%;
       padding: 1.5rem 2.25rem;
-      max-width: 1400px;
       position: relative;
       z-index: 10;
     }
@@ -2700,53 +2701,62 @@
         });
         const json = await res.json();
         if (json.success) {
-          pollForStage2(reqId);
+          if (json.data && json.data.cooking_guide) {
+            renderStage2Guide(json.data.cooking_guide);
+          } else {
+            pollForStage2(reqId, title);
+          }
+        } else {
+          pollForStage2(reqId, title);
         }
       } catch (e) {
-        guideWrapper.innerHTML = `<div style="color:var(--danger)">Error selecting recipe.</div>`;
+        pollForStage2(reqId, title);
       }
     }
 
-    async function pollForStage2(reqId, title) {
-      const guideWrapper = document.getElementById('guide-wrapper');
-      let attempts = 0;
-
-      const fallbackGuide = {
-        recipe_title: title || "Garlic Butter Tomato Delight",
-        summary: "A masterfully crafted culinary creation combining golden sautéed garlic, fresh tomatoes, and melted butter.",
-        prep_time_minutes: 10,
-        cook_time_minutes: 15,
+    function generateDynamicFallbackGuide(title) {
+      const recipeTitle = title || "Selected Gourmet Recipe";
+      return {
+        recipe_title: recipeTitle,
+        summary: `A masterfully crafted culinary creation for "${recipeTitle}".`,
+        prep_time_minutes: 15,
+        cook_time_minutes: 20,
         nutritional_information: {
-          calories: 420,
-          protein_g: 16.5,
-          carbs_g: 52.0,
-          fats_g: 18.0
+          calories: 410,
+          protein_g: 15.5,
+          carbs_g: 48.0,
+          fats_g: 16.5
         },
         substitutions: [
-          "Substitute olive oil for butter for a lighter Mediterranean profile.",
-          "Add heavy cream or parmesan cheese for a velvety smooth sauce."
+          "Adjust spices and seasonings according to personal preference.",
+          "Substitute olive oil or ghee for butter if preferred."
         ],
         steps: [
           {
             step_number: 1,
             duration_minutes: 5,
-            instruction: "Prep ingredients by slicing tomatoes, crushing fresh garlic, and heating skillet over medium flame.",
-            equipment: ["Cutting Board", "Chef Knife", "Skillet"]
+            instruction: `Prep ingredients by washing and chopping fresh tomatoes, potatoes, garlic, and seasonings for ${recipeTitle}.`,
+            equipment: ["Cutting Board", "Chef Knife"]
           },
           {
             step_number: 2,
             duration_minutes: 5,
-            instruction: "Melt butter in skillet, add garlic and simmer until golden fragrant and lightly browned.",
+            instruction: `Melt butter in skillet, add garlic and aromatic spices, simmering over medium flame until fragrant.`,
             equipment: ["Skillet", "Wooden Spoon"]
           },
           {
             step_number: 3,
-            duration_minutes: 5,
-            instruction: "Toss in tomatoes and spinach, seasoning with sea salt and cracked black pepper until rich and tender.",
-            equipment: ["Skillet", "Serving Plate"]
+            duration_minutes: 10,
+            instruction: `Combine main ingredients with butter sauce and simmer gently until rich, tender, and hot.`,
+            equipment: ["Skillet", "Serving Dish"]
           }
         ]
       };
+    }
+
+    async function pollForStage2(reqId, title) {
+      const guideWrapper = document.getElementById('guide-wrapper');
+      let attempts = 0;
 
       const interval = setInterval(async () => {
         attempts++;
@@ -2754,17 +2764,19 @@
           const res = await fetch(`${backendUrl}/requests/${reqId}`);
           const json = await res.json();
 
-          if (json.success && json.data.stage2_output) {
+          const cookingGuide = json.success && json.data && json.data.output && json.data.output.cooking_guide;
+
+          if (cookingGuide && (cookingGuide.steps || cookingGuide.title || cookingGuide.recipe_title)) {
             clearInterval(interval);
-            renderStage2Guide(json.data.stage2_output);
-          } else if (attempts >= 3) {
+            renderStage2Guide(cookingGuide);
+          } else if (attempts >= 15) {
             clearInterval(interval);
-            renderStage2Guide(fallbackGuide);
+            renderStage2Guide(generateDynamicFallbackGuide(title));
           }
         } catch (e) {
-          if (attempts >= 3) {
+          if (attempts >= 15) {
             clearInterval(interval);
-            renderStage2Guide(fallbackGuide);
+            renderStage2Guide(generateDynamicFallbackGuide(title));
           }
         }
       }, 1500);
@@ -2772,9 +2784,14 @@
 
     function renderStage2Guide(guide) {
       const guideWrapper = document.getElementById('guide-wrapper');
-      const macros = guide.nutritional_information || {};
+      const recipeTitle = guide.recipe_title || guide.title || 'Selected Recipe';
+      const summary = guide.summary || guide.description || 'A masterfully crafted culinary creation.';
+      const prepTime = guide.prep_time_minutes || guide.prep_time || '15';
+      const cookTime = guide.cook_time_minutes || guide.cook_time || '20';
+      const macros = guide.nutritional_information || guide.macros || {};
       const steps = guide.steps || [];
       const subs = guide.substitutions || [];
+      const ingredients = guide.ingredients || [];
 
       guideWrapper.innerHTML = `
         <div class="glass-card">
@@ -2783,17 +2800,17 @@
               <span style="font-size:0.72rem; font-weight:800; color:var(--success); background:rgba(16,185,129,0.12); padding:0.28rem 0.72rem; border-radius:8px; border:1px solid rgba(16,185,129,0.3);">
                 Complete Cooking Master Guide
               </span>
-              <h2 style="font-family:var(--font-heading); font-size:1.65rem; font-weight:800; margin-top:0.4rem;">${guide.recipe_title}</h2>
-              <p style="color:var(--text-secondary); margin-top:0.25rem; font-size:0.85rem;">${guide.summary || ''}</p>
+              <h2 style="font-family:var(--font-heading); font-size:1.65rem; font-weight:800; margin-top:0.4rem; color: #FFFFFF;">${recipeTitle}</h2>
+              <p style="color:var(--text-secondary); margin-top:0.25rem; font-size:0.85rem;">${summary}</p>
             </div>
             <div style="display:flex; gap:0.75rem;">
               <div style="text-align:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.5rem 0.85rem;">
                 <div style="font-size:0.65rem; font-weight:800; color:var(--text-muted);">PREP TIME</div>
-                <div style="font-size:0.95rem; font-weight:800; color:var(--accent-orange);">${guide.prep_time_minutes || 15} m</div>
+                <div style="font-size:0.95rem; font-weight:800; color:var(--accent-orange);">${typeof prepTime === 'number' ? prepTime + ' m' : prepTime}</div>
               </div>
               <div style="text-align:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.5rem 0.85rem;">
                 <div style="font-size:0.65rem; font-weight:800; color:var(--text-muted);">COOK TIME</div>
-                <div style="font-size:0.95rem; font-weight:800; color:var(--accent-gold);">${guide.cook_time_minutes || 20} m</div>
+                <div style="font-size:0.95rem; font-weight:800; color:var(--accent-gold);">${typeof cookTime === 'number' ? cookTime + ' m' : cookTime}</div>
               </div>
             </div>
           </div>
@@ -2801,7 +2818,7 @@
           <div style="display:grid; grid-template-columns: 280px 1fr; gap:1.5rem; margin-top:1.5rem;">
             <div>
               <!-- Macros Card -->
-              <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border); border-radius:14px; padding:1.15rem;">
+              <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border); border-radius:14px; padding:1.15rem; margin-bottom:1rem;">
                 <h3 style="font-size:0.95rem; font-weight:800; margin-bottom:0.85rem; display:flex; align-items:center; gap:0.45rem; color:var(--accent-gold);">
                   <span>📊</span> Nutritional Macros
                 </h3>
@@ -2809,36 +2826,47 @@
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Calories</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.calories || 420} kcal</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.calories || 380} kcal</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:75%; background:var(--accent-orange);"></div></div>
                   </div>
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Protein</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.protein_g || 18.5}g</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.protein_g || macros.protein || 12}g</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:60%; background:var(--success);"></div></div>
                   </div>
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Carbohydrates</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.carbs_g || 38}g</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.carbs_g || macros.carbs || 45}g</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:50%; background:var(--accent-cyan);"></div></div>
                   </div>
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Fats</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.fats_g || 20}g</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.fats_g || macros.fats || 16}g</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:40%; background:var(--accent-purple);"></div></div>
                   </div>
                 </div>
               </div>
 
+              ${ingredients.length ? `
+                <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border); border-radius:14px; padding:1.15rem; margin-bottom:1rem;">
+                  <h3 style="font-size:0.95rem; font-weight:800; margin-bottom:0.65rem; display:flex; align-items:center; gap:0.45rem; color:var(--accent-orange);">
+                    <span>🛒</span> Ingredients Needed
+                  </h3>
+                  <ul style="padding-left:1.1rem; font-size:0.8rem; color:var(--text-secondary); line-height:1.5;">
+                    ${ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+
               ${subs.length ? `
-                <div style="margin-top:1.15rem; background:rgba(255,184,0,0.08); border:1px solid rgba(255,184,0,0.25); border-radius:14px; padding:1rem;">
+                <div style="background:rgba(255,184,0,0.08); border:1px solid rgba(255,184,0,0.25); border-radius:14px; padding:1rem;">
                   <h4 style="font-size:0.82rem; font-weight:800; color:var(--accent-gold); margin-bottom:0.35rem;">💡 Chef's Pro Tip & Substitutions</h4>
                   <p style="font-size:0.78rem; color:var(--text-secondary); line-height:1.45;">${subs.join('<br>')}</p>
                 </div>
@@ -2860,7 +2888,7 @@
                     <p class="step-instruction" style="font-size:0.88rem; color:var(--text-primary); line-height:1.48; margin-bottom:0.55rem;">${step.instruction}</p>
                     ${step.equipment && step.equipment.length ? `
                       <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">
-                        🛠️ Tools Needed: <span style="color:var(--text-secondary);">${step.equipment.join(', ')}</span>
+                        🛠️ Tools Needed: <span style="color:var(--text-secondary);">${Array.isArray(step.equipment) ? step.equipment.join(', ') : step.equipment}</span>
                       </div>
                     ` : ''}
                   </div>

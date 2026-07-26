@@ -36,7 +36,7 @@ class LLMRecipeWorker:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=15) as response:
+            with urllib.request.urlopen(req, timeout=60) as response:
                 if response.status == 200:
                     resp_body = json.loads(response.read().decode("utf-8"))
                     return resp_body.get("response")

@@ -38,14 +38,97 @@ DishGenie/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Running Locally)
 
-### 1. Clone & Setup
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+- Python 3.10+ (optional, for local development outside Docker).
+
+---
+
+### 1. Configure Environment Variables
+Copy the `.env.example` template to create your local `.env` file:
+
 ```bash
+# On Linux / macOS / Git Bash
 cp .env.example .env
+
+# On Windows PowerShell
+Copy-Item .env.example .env
 ```
 
-### 2. Run Database & Infrastructure Services
+---
+
+### 2. Run the Entire Application Stack with Docker
+
+To build and start all services (PostgreSQL, RabbitMQ, Redis, MinIO, Ollama, FastAPI Backend, Background Worker, and Nginx Frontend):
+
 ```bash
-docker compose up -d
+docker compose -f docker/docker-compose.yml up -d --build
 ```
+
+---
+
+### 🌐 Accessing Services
+
+Once all containers are running, you can access the following services:
+
+| Service | URL / Port | Description |
+| :--- | :--- | :--- |
+| **Web Frontend UI** | [http://localhost:80](http://localhost:80) | Main User Interface |
+| **FastAPI Backend & API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive Swagger API Documentation |
+| **MinIO Console** | [http://localhost:9001](http://localhost:9001) | Object Storage Web Dashboard (`dishgenie_minioadmin` / `dishgenie_miniopassword`) |
+| **RabbitMQ Management** | [http://localhost:15672](http://localhost:15672) | Queue Dashboard (`dishgenie_rmq_user` / `dishgenie_rmq_password`) |
+| **Ollama Local LLM** | [http://localhost:11434](http://localhost:11434) | Local LLM Engine Endpoint |
+
+---
+
+### 📋 Useful Docker Commands
+
+- **View Live Container Logs:**
+  ```bash
+  docker compose -f docker/docker-compose.yml logs -f
+  ```
+
+- **View Logs for Specific Services (e.g., App & Worker):**
+  ```bash
+  docker compose -f docker/docker-compose.yml logs -f app worker
+  ```
+
+- **Check Container Status:**
+  ```bash
+  docker compose -f docker/docker-compose.yml ps
+  ```
+
+- **Stop All Application Services:**
+  ```bash
+  docker compose -f docker/docker-compose.yml down
+  ```
+
+- **Stop & Remove All Volumes (Clean Reset):**
+  ```bash
+  docker compose -f docker/docker-compose.yml down -v
+  ```
+
+---
+
+### 🛠️ Alternative: Run Infrastructure Only (Local Dev Mode)
+
+If you are developing backend code locally and only want to run database and message services via Docker:
+
+1. **Start Infrastructure Containers:**
+   ```bash
+   docker compose -f docker/docker-compose.yml up -d postgres rabbitmq redis minio create-bucket ollama
+   ```
+
+2. **Install Dependencies & Run FastAPI App:**
+   ```bash
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+3. **Run Background Worker:**
+   ```bash
+   python -m app.workers.task_worker
+   ```
+

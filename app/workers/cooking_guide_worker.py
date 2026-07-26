@@ -36,7 +36,7 @@ class CookingGuideWorker:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=60) as response:
                 if response.status == 200:
                     resp_body = json.loads(response.read().decode("utf-8"))
                     return resp_body.get("response")
@@ -114,52 +114,57 @@ Do not include any intro or outro text. Return valid JSON only.
                 logger.warning("Could not parse JSON response from Ollama: %s", parse_err)
 
         # Fallback detailed cooking guide tailored to recipe_title
+        words = [w.strip() for w in recipe_title.split() if len(w) > 3]
+        dish_name = recipe_title.title()
+        main_component = words[0] if words else "Ingredients"
+
         return {
-            "title": recipe_title,
+            "title": dish_name,
             "servings": 2,
             "prep_time": "15 mins",
             "cook_time": "20 mins",
             "ingredients": [
-                "2 medium Tomatoes, chopped",
-                "2 medium Potatoes, boiled & cubed",
-                "2 tbsp Butter",
-                "3 cloves Garlic, minced",
-                "Salt & spices to taste",
+                f"Fresh {main_component} (main ingredient)",
+                "Aromatic spices & seasonings",
+                "2 tbsp Cooking butter or oil",
+                "Fresh garlic & herbs",
+                "Salt & pepper to taste",
             ],
             "steps": [
                 {
                     "step_number": 1,
-                    "instruction": "Prepare fresh ingredients: chop tomatoes, peel boiled potatoes, and mincing garlic.",
+                    "instruction": f"Prepare fresh ingredients for {dish_name}. Wash, chop, and mince all key components.",
                     "duration_minutes": 5,
-                    "equipment": ["Cutting board", "Knife"],
+                    "equipment": ["Cutting board", "Chef knife"],
                 },
                 {
                     "step_number": 2,
-                    "instruction": "Melt butter in skillet over medium heat. Sauté garlic until golden brown.",
-                    "duration_minutes": 3,
-                    "equipment": ["Skillet", "Spatula"],
+                    "instruction": "Heat skillet or cooking pot over medium flame with butter or oil. Sauté aromatics until fragrant.",
+                    "duration_minutes": 4,
+                    "equipment": ["Skillet / Pan", "Spatula"],
                 },
                 {
                     "step_number": 3,
-                    "instruction": "Add tomatoes and spices; cook down until soft and aromatic.",
-                    "duration_minutes": 7,
-                    "equipment": ["Skillet"],
+                    "instruction": f"Combine {main_component.lower()} and seasonings. Cook gently, stirring occasionally to infuse rich flavors.",
+                    "duration_minutes": 8,
+                    "equipment": ["Skillet / Pan"],
                 },
                 {
                     "step_number": 4,
-                    "instruction": "Fold in cubed potatoes and simmer for 5 minutes until flavors blend. Serve hot.",
-                    "duration_minutes": 5,
-                    "equipment": ["Serving bowl"],
+                    "instruction": f"Simmer {dish_name} until perfectly cooked and tender. Garnish with fresh herbs and serve warm.",
+                    "duration_minutes": 3,
+                    "equipment": ["Serving plate / Bowl"],
                 },
             ],
             "macros": {
-                "calories": 380,
-                "protein_g": 8.5,
-                "carbs_g": 42.0,
-                "fats_g": 18.0,
+                "calories": 410,
+                "protein_g": 14.5,
+                "carbs_g": 45.0,
+                "fats_g": 16.0,
             },
             "substitutions": [
-                "Use Olive Oil or Ghee in place of butter if desired.",
+                "Substitute butter with olive oil or ghee according to preference.",
+                "Adjust chili powder or black pepper for desired heat level.",
             ],
         }
 
