@@ -1955,9 +1955,6 @@
           <button class="tab-pill active" id="tab-btn-ingredients" onclick="switchInputMode('ingredients', this)">
             <span>🛒</span> By Ingredients List
           </button>
-          <button class="tab-pill" id="tab-btn-recipename" onclick="switchInputMode('recipename', this)">
-            <span>🍲</span> By Recipe / Dish Name
-          </button>
           <button class="tab-pill" id="tab-btn-image" onclick="switchInputMode('image', this)">
             <span>📷</span> Refrigerator Scan (YOLO)
           </button>
@@ -3171,33 +3168,11 @@
             <span class="preset-chip" onclick="addPreset('pasta')">+ Pasta</span>
           `;
         }
-      } else if (mode === 'recipename') {
-        if (textGroup) textGroup.style.display = 'block';
-        if (labelEl) labelEl.innerText = 'Direct Dish / Recipe Name:';
-        if (textarea) textarea.placeholder = 'e.g., Paneer Butter Masala, Garlic Bread, Chicken Biryani, Pasta Carbonara...';
-        if (textarea && (textarea.value.includes('tomatoes, potatoes') || textarea.value.trim() === '')) textarea.value = 'Paneer Butter Masala';
-        if (btnText) btnText.innerText = 'Generate 5 Gourmet Recipe Styles via Ollama';
-        if (presetsGroup) {
-          presetsGroup.innerHTML = `
-            <span class="preset-chip" onclick="setRecipeNamePreset('Paneer Butter Masala')">+ Paneer Butter Masala</span>
-            <span class="preset-chip" onclick="setRecipeNamePreset('Garlic Bread')">+ Garlic Bread</span>
-            <span class="preset-chip" onclick="setRecipeNamePreset('Chicken Biryani')">+ Chicken Biryani</span>
-            <span class="preset-chip" onclick="setRecipeNamePreset('White Sauce Pasta')">+ White Sauce Pasta</span>
-            <span class="preset-chip" onclick="setRecipeNamePreset('Mexican Tacos')">+ Mexican Tacos</span>
-            <span class="preset-chip" onclick="setRecipeNamePreset('Thai Green Curry')">+ Thai Green Curry</span>
-            <span class="preset-chip" onclick="setRecipeNamePreset('Dal Makhani')">+ Dal Makhani</span>
-          `;
-        }
       } else if (mode === 'image') {
         document.getElementById('image-file').click();
       } else if (mode === 'voice') {
         alert('Voice Audio recording mode activated! Speak ingredients or dish name clearly into your microphone.');
       }
-    }
-
-    function setRecipeNamePreset(dishName) {
-      const textarea = document.getElementById('ingredients-text');
-      if (textarea) textarea.value = dishName;
     }
 
     function addPreset(item) {
