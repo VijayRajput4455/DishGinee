@@ -1,4 +1,4 @@
-from sqlalchemy import Enum as SQLEnum, String, Text
+from sqlalchemy import Boolean, Enum as SQLEnum, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.enums import InputType, RequestStatus
@@ -22,6 +22,12 @@ class Request(BaseModel):
     cuisine: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
+    )
+
+    is_vegetarian: Mapped[bool | None] = mapped_column(
+        Boolean,
+        nullable=True,
+        default=None,
     )
 
     # Optional fields based on input_type (TEXT / VOICE)

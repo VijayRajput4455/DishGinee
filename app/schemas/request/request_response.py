@@ -16,6 +16,7 @@ class RequestResponse(BaseModel):
     input_type: InputType = Field(..., description="Input method used (IMAGE, TEXT, VOICE)")
     status: RequestStatus = Field(..., description="Current processing status")
     cuisine: str | None = Field(default=None, description="Optional target cuisine preference")
+    is_vegetarian: bool | None = Field(default=None, description="Dietary preference constraint (true=Veg, false=Non-Veg, null=Any)")
     raw_text_input: str | None = Field(default=None, description="Raw text ingredient list if TEXT input")
     audio_url: str | None = Field(default=None, description="Audio storage URL if VOICE input")
     audio_transcription: str | None = Field(default=None, description="Transcribed audio text if VOICE input")

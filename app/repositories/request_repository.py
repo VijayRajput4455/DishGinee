@@ -32,14 +32,16 @@ class RequestRepository(BaseRepository[Request]):
         raw_text_input: str | None = None,
         audio_url: str | None = None,
         cuisine: str | None = None,
+        is_vegetarian: bool | None = None,
     ) -> Request:
-        """Create and persist a new user request with optional cuisine preference."""
+        """Create and persist a new user request with optional cuisine and dietary preferences."""
         request_obj = Request(
             input_type=input_type,
             status=RequestStatus.PENDING,
             raw_text_input=raw_text_input,
             audio_url=audio_url,
             cuisine=cuisine,
+            is_vegetarian=is_vegetarian,
         )
         return self.create(request_obj)
 

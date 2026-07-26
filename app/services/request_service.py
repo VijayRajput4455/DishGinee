@@ -37,12 +37,13 @@ class RequestService:
         self.minio_service = MinIOService()
         self.rabbitmq_service = RabbitMQService()
 
-    def create_text_request(self, raw_text_input: str, cuisine: str | None = None) -> RequestResponse:
+    def create_text_request(self, raw_text_input: str, cuisine: str | None = None, is_vegetarian: bool | None = None) -> RequestResponse:
         """Create a text ingredient request, generate Stage 1 Ollama 5-recipe options, and publish task."""
         request_obj = self.req_repo.create_request(
             input_type=InputType.TEXT,
             raw_text_input=raw_text_input,
             cuisine=cuisine,
+            is_vegetarian=is_vegetarian,
         )
 
         ingredients_list = [item.strip() for item in raw_text_input.split(",") if item.strip()]
@@ -57,6 +58,7 @@ class RequestService:
                 "text": raw_text_input,
                 "ingredients": ingredients_list,
                 "cuisine": cuisine,
+                "is_vegetarian": is_vegetarian,
             },
         )
         if not sent:
@@ -71,6 +73,7 @@ class RequestService:
                     "request_id": request_obj.id,
                     "ingredients": ingredients_list,
                     "cuisine": cuisine,
+                    "is_vegetarian": is_vegetarian,
                 },
                 db=self.db,
             )
@@ -79,7 +82,7 @@ class RequestService:
 
         return RequestResponse.model_validate(request_obj)
 
-    def create_voice_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None) -> RequestResponse:
+    def create_voice_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None, is_vegetarian: bool | None = None) -> RequestResponse:
         """Upload voice audio file to MinIO, create request, and publish transcription task."""
         object_key = f"audio/{uuid.uuid4()}_{filename}"
         audio_storage_url = self.minio_service.upload_file(
@@ -92,12 +95,13 @@ class RequestService:
             input_type=InputType.VOICE,
             audio_url=audio_storage_url,
             cuisine=cuisine,
+            is_vegetarian=is_vegetarian,
         )
 
         # Publish task to RabbitMQ for Whisper speech-to-text worker
         self.rabbitmq_service.publish_task(
             task_type="audio.transcription",
-            payload={"request_id": request_obj.id, "audio_url": audio_storage_url, "cuisine": cuisine},
+            payload={"request_id": request_obj.id, "audio_url": audio_storage_url, "cuisine": cuisine, "is_vegetarian": is_vegetarian},
         )
 
         # Synchronous execution fallback for direct UI response (lazy import to prevent circular dependency)
@@ -108,13 +112,14 @@ class RequestService:
                 "request_id": request_obj.id,
                 "ingredients": ["tomatoes", "potatoes", "garlic", "butter"],
                 "cuisine": cuisine,
+                "is_vegetarian": is_vegetarian,
             },
             db=self.db,
         )
 
         return RequestResponse.model_validate(request_obj)
 
-    def create_image_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None) -> RequestResponse:
+    def create_image_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None, is_vegetarian: bool | None = None) -> RequestResponse:
         """Upload raw image to MinIO, create request & image record, and publish YOLO detection task."""
         object_key = f"raw/{uuid.uuid4()}_{filename}"
         image_storage_url = self.minio_service.upload_file(
@@ -123,7 +128,7 @@ class RequestService:
             content_type="image/jpeg",
         )
 
-        request_obj = self.req_repo.create_request(input_type=InputType.IMAGE, cuisine=cuisine)
+        request_obj = self.req_repo.create_request(input_type=InputType.IMAGE, cuisine=cuisine, is_vegetarian=is_vegetarian)
 
         self.img_repo.add_image(
             request_id=request_obj.id,
@@ -134,7 +139,7 @@ class RequestService:
         # Publish task to RabbitMQ for YOLO computer vision worker
         self.rabbitmq_service.publish_task(
             task_type="image.processing",
-            payload={"request_id": request_obj.id, "image_url": image_storage_url, "cuisine": cuisine},
+            payload={"request_id": request_obj.id, "image_url": image_storage_url, "cuisine": cuisine, "is_vegetarian": is_vegetarian},
         )
 
         # Synchronous YOLO & LLM processing for direct UI response (lazy import to prevent circular dependency)
@@ -153,6 +158,7 @@ class RequestService:
                 "request_id": request_obj.id,
                 "ingredients": ["tomato", "onion", "garlic", "capsicum", "carrot", "potato"],
                 "cuisine": cuisine,
+                "is_vegetarian": is_vegetarian,
             },
             db=self.db,
         )

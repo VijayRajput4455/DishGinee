@@ -27,7 +27,7 @@ def create_text_request(
     db: Session = Depends(get_db),
 ):
     service = RequestService(db)
-    result = service.create_text_request(raw_text_input=payload.raw_text_input, cuisine=payload.cuisine)
+    result = service.create_text_request(raw_text_input=payload.raw_text_input, cuisine=payload.cuisine, is_vegetarian=payload.is_vegetarian)
     return APIResponse(
         success=True,
         message="Text request created successfully. Recipe generation task queued.",
@@ -45,6 +45,7 @@ def create_text_request(
 def create_image_request(
     file: UploadFile,
     cuisine: str | None = Form(default=None, description="Optional cuisine preference (e.g. Indian, Italian, Mexican, Asian)"),
+    is_vegetarian: bool | None = Form(default=None, description="Dietary preference constraint (true=Veg, false=Non-Veg, null=Any)"),
     db: Session = Depends(get_db),
 ):
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -65,6 +66,7 @@ def create_image_request(
         file_bytes=file_bytes,
         filename=file.filename or "image.jpg",
         cuisine=cuisine,
+        is_vegetarian=is_vegetarian,
     )
     return APIResponse(
         success=True,
@@ -83,6 +85,7 @@ def create_image_request(
 def create_voice_request(
     file: UploadFile,
     cuisine: str | None = Form(default=None, description="Optional cuisine preference (e.g. Indian, Italian, Mexican, Asian)"),
+    is_vegetarian: bool | None = Form(default=None, description="Dietary preference constraint (true=Veg, false=Non-Veg, null=Any)"),
     db: Session = Depends(get_db),
 ):
     file_bytes = file.file.read()
@@ -97,6 +100,7 @@ def create_voice_request(
         file_bytes=file_bytes,
         filename=file.filename or "audio.wav",
         cuisine=cuisine,
+        is_vegetarian=is_vegetarian,
     )
     return APIResponse(
         success=True,

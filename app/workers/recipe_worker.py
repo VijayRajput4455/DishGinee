@@ -44,13 +44,26 @@ class LLMRecipeWorker:
             logger.warning("Ollama service call to %s failed (%s). Using local fallback.", self.ollama_url, e)
         return None
 
-    def generate_stage1_options(self, ingredients: list[str], cuisine: str | None = None) -> list[dict[str, Any]]:
-        """Stage 1: Generate 5 distinct recipe options using Ollama local LLM."""
+    def generate_stage1_options(
+        self,
+        ingredients: list[str],
+        cuisine: str | None = None,
+        is_vegetarian: bool | None = None,
+    ) -> list[dict[str, Any]]:
+        """Stage 1: Generate 5 distinct recipe options using Ollama local LLM with dietary constraints."""
         ing_list_str = ", ".join(ingredients) if isinstance(ingredients, list) else str(ingredients)
         cuisine_str = f" {cuisine}" if cuisine else ""
 
+        diet_instruction = ""
+        if is_vegetarian is True:
+            diet_instruction = "\nDIETARY CONSTRAINT: STRICTLY VEGETARIAN ONLY! All 5 recipes MUST be 100% vegetarian. Do NOT include chicken, meat, beef, pork, mutton, fish, seafood, or eggs in any recipe!"
+        elif is_vegetarian is False:
+            diet_instruction = "\nDIETARY PREFERENCE: Non-Vegetarian allowed."
+
         prompt = f"""
-You are an expert chef. Given the available ingredients: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}, generate EXACTLY 5 distinct, delicious recipe options.
+You are an expert chef. Given the available ingredients: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}.{diet_instruction}
+
+Generate EXACTLY 5 distinct, delicious recipe options that strictly obey all ingredients and dietary constraints.
 
 Return a JSON array containing 5 recipe objects with the following schema:
 [
@@ -77,49 +90,97 @@ Do not include any extra commentary. Output pure valid JSON.
             except Exception as parse_err:
                 logger.warning("Could not parse Ollama JSON response: %s", parse_err)
 
-        # Fallback generator: Return 5 customized recipe options
+        # Fallback generator: Return 5 customized recipe options based on dietary choice
         c_prefix = f"{cuisine.title()} " if cuisine else ""
-        main_ing = ingredients[0].title() if ingredients else "Delight"
-        sec_ing = ingredients[1].title() if len(ingredients) > 1 else "Special"
-        third_ing = ingredients[2].title() if len(ingredients) > 2 else "Feast"
+        
+        # Filter non-veg keywords if vegetarian requested
+        non_veg_terms = {"chicken", "mutton", "beef", "pork", "fish", "prawn", "seafood", "egg", "meat"}
+        clean_ings = ingredients
+        if is_vegetarian:
+            clean_ings = [i for i in ingredients if i.lower().strip() not in non_veg_terms]
+            if not clean_ings:
+                clean_ings = ["Paneer", "Tomatoes", "Garlic", "Butter"]
 
-        return [
-            {
-                "title": f"{c_prefix}Garlic Butter {main_ing} & {sec_ing}",
-                "description": f"A rich, comforting dish combining sautéed {main_ing.lower()} and {sec_ing.lower()} in melted butter.",
-                "prep_time": "15 mins",
-                "matched_ingredients": ingredients,
-                "missing_ingredients": ["garlic", "black pepper", "herbs"],
-            },
-            {
-                "title": f"Rustic {c_prefix}{main_ing} {third_ing} Curry / Stew",
-                "description": f"Traditional hearty dish simmering {main_ing.lower()} with aromatic spices and herbs.",
-                "prep_time": "20 mins",
-                "matched_ingredients": ingredients,
-                "missing_ingredients": ["onion", "cumin", "salt"],
-            },
-            {
-                "title": f"{c_prefix}Pan-Seared {main_ing} with Golden {third_ing}",
-                "description": f"Sizzling skillet meal pan-seared to perfection.",
-                "prep_time": "25 mins",
-                "matched_ingredients": ingredients,
-                "missing_ingredients": ["olive oil", "lemon juice"],
-            },
-            {
-                "title": f"Creamy {c_prefix}{sec_ing} & {main_ing} Bake",
-                "description": f"Oven-baked casserole layering tender {sec_ing.lower()} and rich flavors.",
-                "prep_time": "30 mins",
-                "matched_ingredients": ingredients,
-                "missing_ingredients": ["cream", "cheese"],
-            },
-            {
-                "title": f"{c_prefix}Crispy Roasted {main_ing} Bowl",
-                "description": f"Healthy bowl featuring roasted {main_ing.lower()} served with light herbs.",
-                "prep_time": "15 mins",
-                "matched_ingredients": ingredients,
-                "missing_ingredients": ["sea salt", "parsley"],
-            },
-        ]
+        main_ing = clean_ings[0].title() if clean_ings else "Vegetable"
+        sec_ing = clean_ings[1].title() if len(clean_ings) > 1 else "Herbs"
+        third_ing = clean_ings[2].title() if len(clean_ings) > 2 else "Spices"
+
+        if is_vegetarian:
+            return [
+                {
+                    "title": f"{c_prefix}Garlic Butter {main_ing} & {sec_ing}",
+                    "description": f"A rich, comforting vegetarian dish combining sautéed {main_ing.lower()} and {sec_ing.lower()} in melted butter.",
+                    "prep_time": "15 mins",
+                    "matched_ingredients": clean_ings,
+                    "missing_ingredients": ["garlic", "black pepper", "herbs"],
+                },
+                {
+                    "title": f"Rustic {c_prefix}{main_ing} {third_ing} Curry / Stew",
+                    "description": f"Traditional hearty vegetarian dish simmering {main_ing.lower()} with aromatic spices and herbs.",
+                    "prep_time": "20 mins",
+                    "matched_ingredients": clean_ings,
+                    "missing_ingredients": ["onion", "cumin", "salt"],
+                },
+                {
+                    "title": f"{c_prefix}Pan-Seared {main_ing} with Golden {third_ing}",
+                    "description": f"Sizzling skillet vegetarian meal pan-seared to perfection.",
+                    "prep_time": "25 mins",
+                    "matched_ingredients": clean_ings,
+                    "missing_ingredients": ["olive oil", "lemon juice"],
+                },
+                {
+                    "title": f"Creamy {c_prefix}{sec_ing} & {main_ing} Bake",
+                    "description": f"Oven-baked vegetarian casserole layering tender {sec_ing.lower()} and rich flavors.",
+                    "prep_time": "30 mins",
+                    "matched_ingredients": clean_ings,
+                    "missing_ingredients": ["cream", "cheese"],
+                },
+                {
+                    "title": f"{c_prefix}Crispy Roasted {main_ing} Bowl",
+                    "description": f"Healthy vegetarian bowl featuring roasted {main_ing.lower()} served with light herbs.",
+                    "prep_time": "15 mins",
+                    "matched_ingredients": clean_ings,
+                    "missing_ingredients": ["sea salt", "parsley"],
+                },
+            ]
+        else:
+            return [
+                {
+                    "title": f"{c_prefix}Garlic Butter {main_ing} & {sec_ing}",
+                    "description": f"A rich, comforting dish combining sautéed {main_ing.lower()} and {sec_ing.lower()} in melted butter.",
+                    "prep_time": "15 mins",
+                    "matched_ingredients": ingredients,
+                    "missing_ingredients": ["garlic", "black pepper", "herbs"],
+                },
+                {
+                    "title": f"Rustic {c_prefix}{main_ing} {third_ing} Curry / Stew",
+                    "description": f"Traditional hearty dish simmering {main_ing.lower()} with aromatic spices and herbs.",
+                    "prep_time": "20 mins",
+                    "matched_ingredients": ingredients,
+                    "missing_ingredients": ["onion", "cumin", "salt"],
+                },
+                {
+                    "title": f"{c_prefix}Pan-Seared {main_ing} with Golden {third_ing}",
+                    "description": f"Sizzling skillet meal pan-seared to perfection.",
+                    "prep_time": "25 mins",
+                    "matched_ingredients": ingredients,
+                    "missing_ingredients": ["olive oil", "lemon juice"],
+                },
+                {
+                    "title": f"Creamy {c_prefix}{sec_ing} & {main_ing} Bake",
+                    "description": f"Oven-baked casserole layering tender {sec_ing.lower()} and rich flavors.",
+                    "prep_time": "30 mins",
+                    "matched_ingredients": ingredients,
+                    "missing_ingredients": ["cream", "cheese"],
+                },
+                {
+                    "title": f"{c_prefix}Crispy Roasted {main_ing} Bowl",
+                    "description": f"Healthy bowl featuring roasted {main_ing.lower()} served with light herbs.",
+                    "prep_time": "15 mins",
+                    "matched_ingredients": ingredients,
+                    "missing_ingredients": ["sea salt", "parsley"],
+                },
+            ]
 
     def generate_stage2_guide(self, recipe_title: str) -> dict[str, Any]:
         """Stage 2: Generate detailed step-by-step cooking guide using Ollama / structured fallback."""
@@ -141,71 +202,77 @@ Return a valid JSON object matching this schema:
     }}
   ],
   "macros": {{
-    "calories": 450,
-    "protein_g": 25.0,
-    "carbs_g": 30.0,
+    "calories": 380,
+    "protein_g": 8.5,
+    "carbs_g": 42.0,
     "fats_g": 18.0
   }},
   "substitutions": ["Ingredient substitution suggestions"]
 }}
-Output pure valid JSON only.
+Do not include any intro or outro text. Return valid JSON only.
 """
         raw_response = self._call_ollama(prompt)
         if raw_response:
             try:
                 parsed = json.loads(raw_response)
                 if isinstance(parsed, dict) and "title" in parsed and "steps" in parsed:
-                    logger.info("Successfully generated Stage 2 cooking guide via Ollama.")
+                    logger.info("Successfully generated complete cooking guide via Ollama (%s) for '%s'.", self.ollama_model, recipe_title)
                     return parsed
             except Exception as parse_err:
-                logger.warning("Could not parse Stage 2 Ollama JSON: %s", parse_err)
+                logger.warning("Could not parse JSON response from Ollama: %s", parse_err)
 
-        # Fallback Stage 2 guide
+        # Fallback detailed cooking guide tailored to recipe_title
+        words = [w.strip() for w in recipe_title.split() if len(w) > 3]
+        dish_name = recipe_title.title()
+        main_component = words[0] if words else "Ingredients"
+
         return {
-            "title": recipe_title,
+            "title": dish_name,
             "servings": 2,
             "prep_time": "15 mins",
             "cook_time": "20 mins",
             "ingredients": [
-                "250g Main Ingredient (Tomato / Potato / Protein)",
-                "2 tbsp Butter / Olive Oil",
-                "2 cloves Garlic, minced",
-                "Salt and freshly ground black pepper to taste",
+                f"Fresh {main_component} (main ingredient)",
+                "Aromatic spices & seasonings",
+                "2 tbsp Cooking butter or oil",
+                "Fresh garlic & herbs",
+                "Salt & pepper to taste",
             ],
             "steps": [
                 {
                     "step_number": 1,
-                    "instruction": "Prep ingredients: Wash, peel, and cut tomatoes/potatoes into even bite-sized pieces.",
+                    "instruction": f"Prepare fresh ingredients for {dish_name}. Wash, chop, and mince all key components.",
                     "duration_minutes": 5,
                     "equipment": ["Cutting board", "Chef knife"],
                 },
                 {
                     "step_number": 2,
-                    "instruction": "Heat skillet: Melt butter over medium heat. Sauté garlic until aromatic (approx 1 min).",
-                    "duration_minutes": 3,
-                    "equipment": ["Non-stick Skillet", "Spatula"],
+                    "instruction": "Heat skillet or cooking pot over medium flame with butter or oil. Sauté aromatics until fragrant.",
+                    "duration_minutes": 4,
+                    "equipment": ["Skillet / Pan", "Spatula"],
                 },
                 {
                     "step_number": 3,
-                    "instruction": "Cook main ingredients: Add potatoes/tomatoes, cover and simmer on medium-low for 12-15 minutes until tender.",
-                    "duration_minutes": 12,
-                    "equipment": ["Skillet with lid"],
+                    "instruction": f"Combine {main_component.lower()} and seasonings. Cook gently, stirring occasionally to infuse rich flavors.",
+                    "duration_minutes": 8,
+                    "equipment": ["Skillet / Pan"],
                 },
                 {
                     "step_number": 4,
-                    "instruction": "Garnish & Serve: Season with salt, pepper, and fresh herbs. Serve hot.",
-                    "duration_minutes": 2,
-                    "equipment": ["Serving plate"],
+                    "instruction": f"Simmer {dish_name} until perfectly cooked and tender. Garnish with fresh herbs and serve warm.",
+                    "duration_minutes": 3,
+                    "equipment": ["Serving plate / Bowl"],
                 },
             ],
             "macros": {
-                "calories": 420,
-                "protein_g": 18.5,
-                "carbs_g": 38.0,
-                "fats_g": 20.0,
+                "calories": 410,
+                "protein_g": 14.5,
+                "carbs_g": 45.0,
+                "fats_g": 16.0,
             },
             "substitutions": [
-                "Use olive oil or Ghee in place of butter for high-heat roasting.",
+                "Substitute butter with olive oil or ghee according to preference.",
+                "Adjust chili powder or black pepper for desired heat level.",
             ],
         }
 
@@ -214,6 +281,7 @@ Output pure valid JSON only.
         request_id = payload.get("request_id")
         ingredients = payload.get("ingredients", [])
         cuisine = payload.get("cuisine")
+        is_vegetarian = payload.get("is_vegetarian")
 
         # Parse ingredients if passed as string or raw text fallback
         if isinstance(ingredients, str):
@@ -231,7 +299,7 @@ Output pure valid JSON only.
         out_repo = RequestOutputRepository(db)
 
         # 1. Generate 5 Stage 1 candidate recipe options using Ollama
-        options = self.generate_stage1_options(ingredients, cuisine=cuisine)
+        options = self.generate_stage1_options(ingredients, cuisine=cuisine, is_vegetarian=is_vegetarian)
 
         # 2. Update RequestOutput with candidate options payload
         out_repo.upsert_output(request_id=request_id, ingredients=options)
@@ -239,7 +307,7 @@ Output pure valid JSON only.
         # 3. Update Request status to COMPLETED
         req_repo.update_status(request_id=request_id, status=RequestStatus.COMPLETED)
 
-        logger.info("Successfully generated %s recipes for Request #%s (Cuisine: %s)", len(options), request_id, cuisine or 'Any')
+        logger.info("Successfully generated %s recipes for Request #%s (Cuisine: %s, Veg: %s)", len(options), request_id, cuisine or 'Any', is_vegetarian)
         return True
 
     def process_guide_task(self, payload: dict[str, Any], db: Session) -> bool:

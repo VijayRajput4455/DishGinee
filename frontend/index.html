@@ -1541,6 +1541,30 @@
           </button>
         </div>
 
+        <!-- Dietary Preference Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Dietary Preference:
+        </label>
+        <div id="diet-matrix-container" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="diet-card selected" id="diet-card-veg" onclick="selectDietPreference(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌿</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--success);">Vegetarian Only</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">100% Meat & Egg Free</div>
+          </div>
+
+          <div class="diet-card" id="diet-card-nonveg" onclick="selectDietPreference(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍗</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--accent-orange);">Non-Vegetarian</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">Includes Meat & Seafood</div>
+          </div>
+
+          <div class="diet-card" id="diet-card-any" onclick="selectDietPreference(this, null)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍽️</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--text-primary);">All / Any</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">No Restrictions</div>
+          </div>
+        </div>
+
         <!-- Cuisine Selector Matrix -->
         <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
           Select Target Cuisine Style:
@@ -2469,6 +2493,28 @@
       el.classList.add('active');
     }
 
+    let activeIsVegetarian = true;
+
+    function selectDietPreference(el, isVeg) {
+      document.querySelectorAll('.diet-card').forEach(c => {
+        c.classList.remove('selected');
+        c.style.background = 'rgba(255,255,255,0.03)';
+        c.style.borderColor = 'var(--border)';
+      });
+      el.classList.add('selected');
+      if (isVeg === true) {
+        el.style.background = 'rgba(16,185,129,0.12)';
+        el.style.borderColor = 'rgba(16,185,129,0.4)';
+      } else if (isVeg === false) {
+        el.style.background = 'rgba(255,107,0,0.12)';
+        el.style.borderColor = 'rgba(255,107,0,0.4)';
+      } else {
+        el.style.background = 'rgba(255,255,255,0.08)';
+        el.style.borderColor = 'var(--border)';
+      }
+      activeIsVegetarian = isVeg;
+    }
+
     function selectCuisine(el, cuisine) {
       document.querySelectorAll('.cuisine-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
@@ -2534,12 +2580,16 @@
           const formData = new FormData();
           formData.append('file', fileInput.files[0]);
           if (activeCuisine) formData.append('cuisine', activeCuisine);
+          if (activeIsVegetarian !== null && activeIsVegetarian !== undefined) {
+            formData.append('is_vegetarian', activeIsVegetarian);
+          }
           body = formData;
         } else {
           headers = { 'Content-Type': 'application/json' };
           body = JSON.stringify({
             raw_text_input: ingredientsText || 'tomatoes, potatoes, garlic, butter',
-            cuisine: activeCuisine
+            cuisine: activeCuisine,
+            is_vegetarian: activeIsVegetarian
           });
         }
 
