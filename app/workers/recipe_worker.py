@@ -61,17 +61,19 @@ class LLMRecipeWorker:
             diet_instruction = "\nDIETARY PREFERENCE: Non-Vegetarian allowed."
 
         prompt = f"""
-You are an expert chef. Given the available ingredients: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}.{diet_instruction}
+You are an expert chef. The user input is: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}.{diet_instruction}
 
-Generate EXACTLY 5 distinct, delicious recipe options that strictly obey all ingredients and dietary constraints.
+Note: The user input may contain a list of raw ingredients OR a specific dish/recipe name (e.g. 'Paneer Butter Masala', 'Garlic Bread').
+- If the input is a list of ingredients, generate 5 distinct recipes utilizing those ingredients.
+- If the input is a specific recipe name, generate 5 delicious gourmet variations/styles of that dish (e.g. Classic, Restaurant-Style, Quick 15-Min, Smoky Tandoori, Creamy Garlic).
 
-Return a JSON array containing 5 recipe objects with the following schema:
+Return a JSON array containing EXACTLY 5 recipe objects with the following schema:
 [
   {{
     "title": "Recipe Name",
     "description": "Short appetizing description",
     "prep_time": "15-20 mins",
-    "matched_ingredients": ["list of ingredients used from input"],
+    "matched_ingredients": ["list of key ingredients"],
     "missing_ingredients": ["extra staple ingredients required"]
   }}
 ]

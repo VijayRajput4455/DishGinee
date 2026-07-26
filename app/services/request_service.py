@@ -243,3 +243,36 @@ class RequestService:
     def get_popular_recipes(self, limit: int = 6) -> list[dict[str, Any]]:
         """Fetch popular recipe cards sorted by DB ratings."""
         return self.req_repo.get_popular_recipes(limit=limit)
+
+    def create_direct_recipe_guide_request(
+        self,
+        recipe_title: str,
+        cuisine: str | None = None,
+        is_vegetarian: bool | None = None,
+    ) -> RequestOutputResponse:
+        """Directly create a request and immediately generate complete Stage 2 Cooking Guide for a dish name."""
+        request_obj = self.req_repo.create_request(
+            input_type=InputType.TEXT,
+            raw_text_input=f"Direct Dish: {recipe_title}",
+            cuisine=cuisine,
+            is_vegetarian=is_vegetarian,
+        )
+
+        output_obj = self.req_repo.upsert_request_output(
+            request_id=request_obj.id,
+            selected_recipe={"title": recipe_title},
+        )
+
+        from app.workers.cooking_guide_worker import CookingGuideWorker
+        guide_worker = CookingGuideWorker()
+        guide_worker.process_cooking_guide_task(
+            payload={
+                "request_id": request_obj.id,
+                "selected_recipe": recipe_title,
+            },
+            db=self.db,
+        )
+
+        self.req_repo.update_status(request_obj.id, RequestStatus.COMPLETED)
+        updated_output = self.out_repo.get_by_request_id(request_obj.id)
+        return RequestOutputResponse.model_validate(updated_output or output_obj)

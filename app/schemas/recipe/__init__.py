@@ -7,7 +7,7 @@ from app.schemas.recipe.recipe_response import (
     RecipeRatingRequest,
     RequestOutputResponse,
 )
-from app.schemas.recipe.recipe_selection import RecipeSelectRequest
+from app.schemas.recipe.recipe_selection import DirectRecipeGuideRequest, RecipeSelectRequest
 
 __all__ = [
     "DetectedIngredient",
@@ -18,4 +18,5 @@ __all__ = [
     "RequestOutputResponse",
     "RecipeSelectRequest",
     "RecipeRatingRequest",
+    "DirectRecipeGuideRequest",
 ]

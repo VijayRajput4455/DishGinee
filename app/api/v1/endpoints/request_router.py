@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas import (
     APIResponse,
+    DirectRecipeGuideRequest,
     RecipeRatingRequest,
     RecipeSelectRequest,
     RequestCreateText,
@@ -14,6 +15,30 @@ from app.schemas import (
 from app.services.request_service import RequestService
 
 router = APIRouter(prefix="/requests", tags=["Requests"])
+
+
+@router.post(
+    "/direct-guide",
+    response_model=APIResponse[RequestOutputResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Get Direct Recipe Master Cooking Guide",
+    description="Pass a dish name directly (e.g. Paneer Butter Masala) to bypass candidate selection and immediately return full step-by-step master cooking guide.",
+)
+def get_direct_recipe_guide(
+    payload: DirectRecipeGuideRequest,
+    db: Session = Depends(get_db),
+):
+    service = RequestService(db)
+    result = service.create_direct_recipe_guide_request(
+        recipe_title=payload.recipe_title,
+        cuisine=payload.cuisine,
+        is_vegetarian=payload.is_vegetarian,
+    )
+    return APIResponse(
+        success=True,
+        message=f"Master cooking guide for '{payload.recipe_title}' generated successfully.",
+        data=result,
+    )
 
 
 @router.post(

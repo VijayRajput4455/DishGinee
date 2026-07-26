@@ -10,6 +10,7 @@ from app.schemas.recipe import (
     CookingGuide,
     CookingGuideStep,
     DetectedIngredient,
+    DirectRecipeGuideRequest,
     MacroNutrients,
     RecipeOption,
     RecipeRatingRequest,
@@ -44,6 +45,7 @@ __all__ = [
     "RequestOutputResponse",
     "RecipeSelectRequest",
     "RecipeRatingRequest",
+    "DirectRecipeGuideRequest",
     # Request
     "RequestCreateText",
     "RequestCreateVoice",

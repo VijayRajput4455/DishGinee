@@ -1483,6 +1483,9 @@
       <div class="nav-item" id="nav-create" onclick="switchView('create')">
         <span>➕</span> New Request
       </div>
+      <div class="nav-item" id="nav-direct-guide" onclick="switchView('direct-guide')">
+        <span>🍳</span> Direct Recipe Guide
+      </div>
       <div class="nav-item" id="nav-requests" onclick="switchView('my-requests')">
         <span>📜</span> My Requests
       </div>
@@ -1949,13 +1952,16 @@
         
         <!-- Mode Tabs -->
         <div class="tab-pills">
-          <button class="tab-pill active" onclick="switchTab('text', this)">
-            <span>✍️</span> Freeform Text
+          <button class="tab-pill active" id="tab-btn-ingredients" onclick="switchInputMode('ingredients', this)">
+            <span>🛒</span> By Ingredients List
           </button>
-          <button class="tab-pill" onclick="switchTab('image', this)">
+          <button class="tab-pill" id="tab-btn-recipename" onclick="switchInputMode('recipename', this)">
+            <span>🍲</span> By Recipe / Dish Name
+          </button>
+          <button class="tab-pill" id="tab-btn-image" onclick="switchInputMode('image', this)">
             <span>📷</span> Refrigerator Scan (YOLO)
           </button>
-          <button class="tab-pill" onclick="switchTab('voice', this)">
+          <button class="tab-pill" id="tab-btn-voice" onclick="switchInputMode('voice', this)">
             <span>🎙️</span> Voice Audio (Whisper)
           </button>
         </div>
@@ -2018,14 +2024,14 @@
         <!-- Text Input Area -->
         <div id="input-text-group">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-            <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem;">
-              Available Ingredients:
+            <label id="input-label-text" style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem;">
+              Available Ingredients List:
             </label>
             <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Click quick tags to add</span>
           </div>
 
           <!-- Quick Presets -->
-          <div class="preset-chips">
+          <div class="preset-chips" id="preset-chips-container">
             <span class="preset-chip" onclick="addPreset('tomatoes')">+ Tomatoes</span>
             <span class="preset-chip" onclick="addPreset('potatoes')">+ Potatoes</span>
             <span class="preset-chip" onclick="addPreset('garlic')">+ Garlic</span>
@@ -2037,12 +2043,12 @@
             <span class="preset-chip" onclick="addPreset('olive oil')">+ Olive Oil</span>
           </div>
 
-          <textarea id="ingredients-text" class="input-textarea" rows="2">tomatoes, potatoes, butter, garlic, spinach, chicken</textarea>
+          <textarea id="ingredients-text" class="input-textarea" rows="2" placeholder="e.g., tomatoes, potatoes, butter, garlic, spinach, chicken">tomatoes, potatoes, butter, garlic, spinach, chicken</textarea>
         </div>
 
         <!-- Submit Button -->
         <button class="btn-action" onclick="generateRecipes()">
-          <span>✦</span> Generate 5 Recipe Candidates via Ollama
+          <span>✦</span> <span id="btn-generate-text">Generate 5 Recipe Candidates via Ollama</span>
         </button>
       </div>
 
@@ -2059,6 +2065,77 @@
 
       <!-- Stage 2 Guide Container -->
       <div id="guide-wrapper" style="display:none; margin-bottom:2rem;"></div>
+
+    </div>
+
+    <!-- VIEW: DEDICATED DIRECT DISH RECIPE COOKING GUIDE SEARCH -->
+    <div id="view-direct-guide" class="app-view" style="display:none;">
+      
+      <!-- Studio Page Banner -->
+      <div class="hero-request-card" style="margin-bottom:1.5rem;">
+        <div class="hero-content">
+          <h2 class="hero-title">
+            Direct Recipe <span class="cursive-highlight">Cooking Guide</span> 🍳
+          </h2>
+          <p class="hero-desc">
+            Type any dish name (e.g. Paneer Butter Masala, Garlic Bread, Chicken Biryani) to get the complete step-by-step master cooking guide directly!
+          </p>
+          <div class="hero-badges">
+            <div class="hero-badge-tag"><span>⚡</span> Instant Direct Guide</div>
+            <div class="hero-badge-tag"><span>👨‍🍳</span> Step-by-Step Instructions</div>
+            <div class="hero-badge-tag"><span>📊</span> Nutritional Macros & Star Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Glass Input Form Card -->
+      <div class="glass-card" style="margin-bottom:1.75rem;">
+        
+        <!-- Label -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+          <label style="font-weight:800; font-family:var(--font-heading); font-size:1.05rem; color:#FFFFFF;">
+            Enter Dish or Recipe Name:
+          </label>
+          <span style="font-size:0.75rem; color:var(--accent-gold); font-weight:700;">Click quick tags to auto-fill</span>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="preset-chips" style="margin-bottom:0.85rem;">
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'Paneer Butter Masala'">+ Paneer Butter Masala</span>
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'Garlic Bread'">+ Garlic Bread</span>
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'Chicken Biryani'">+ Chicken Biryani</span>
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'White Sauce Pasta'">+ White Sauce Pasta</span>
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'Mexican Tacos'">+ Mexican Tacos</span>
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'Thai Green Curry'">+ Thai Green Curry</span>
+          <span class="preset-chip" onclick="document.getElementById('direct-dish-input').value = 'Dal Makhani'">+ Dal Makhani</span>
+        </div>
+
+        <input type="text" id="direct-dish-input" class="input-textarea" style="height:52px; font-size:1.05rem; font-weight:700; color:#FFFFFF; margin-bottom:1.25rem;" placeholder="e.g., Paneer Butter Masala, Garlic Bread, Chicken Biryani, Pasta Carbonara..." value="Paneer Butter Masala">
+
+        <!-- Dietary Preference Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Dietary Preference:
+        </label>
+        <div style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="diet-card selected" id="direct-diet-veg" onclick="selectDietPreferenceDirect(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌿</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--success);">Vegetarian Only</div>
+          </div>
+          <div class="diet-card" id="direct-diet-nonveg" onclick="selectDietPreferenceDirect(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍗</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--accent-orange);">Non-Vegetarian</div>
+          </div>
+        </div>
+
+        <!-- Submit Action Button -->
+        <button class="btn-action" onclick="fetchDirectCookingGuide()">
+          <span>⚡</span> Get Complete Master Cooking Guide Directly
+        </button>
+
+      </div>
+
+      <!-- Direct Guide Result Container -->
+      <div id="direct-guide-result-wrapper" style="display:none; margin-bottom:2rem;"></div>
 
     </div>
 
@@ -2856,6 +2933,9 @@
       if (viewName === 'create') {
         targetId = 'view-new-request';
         navId = 'nav-create';
+      } else if (viewName === 'direct-guide') {
+        targetId = 'view-direct-guide';
+        navId = 'nav-direct-guide';
       } else if (viewName === 'my-requests') {
         targetId = 'view-my-requests';
         navId = 'nav-requests';
@@ -2965,10 +3045,155 @@
       activeIsVegetarian = isVeg;
     }
 
+    function selectDietPreferenceDirect(el, isVeg) {
+      document.querySelectorAll('#view-direct-guide .diet-card').forEach(c => {
+        c.classList.remove('selected');
+        c.style.background = 'rgba(255,255,255,0.03)';
+        c.style.borderColor = 'var(--border)';
+      });
+      el.classList.add('selected');
+      if (isVeg === true) {
+        el.style.background = 'rgba(16,185,129,0.12)';
+        el.style.borderColor = 'rgba(16,185,129,0.4)';
+      } else {
+        el.style.background = 'rgba(255,107,0,0.12)';
+        el.style.borderColor = 'rgba(255,107,0,0.4)';
+      }
+      activeIsVegetarian = isVeg;
+    }
+
+    async function fetchDirectCookingGuide() {
+      const inputEl = document.getElementById('direct-dish-input');
+      const dishName = inputEl ? inputEl.value.trim() : 'Paneer Butter Masala';
+      if (!dishName) {
+        alert('Please enter a dish name!');
+        return;
+      }
+
+      const resultWrapper = document.getElementById('direct-guide-result-wrapper');
+      resultWrapper.style.display = 'block';
+      resultWrapper.innerHTML = `
+        <div class="chef-thinking-container stage2-cooking-loader">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">👨‍🍳</div>
+              <div class="thought-bubbles">
+                <span class="bubble b1">🍲</span>
+                <span class="bubble b2">🧂</span>
+                <span class="bubble b3">🧄</span>
+                <span class="bubble b4">🍳</span>
+                <span class="bubble b5">✨</span>
+              </div>
+            </div>
+          </div>
+          <h3 class="thinking-title">
+            Chef Genie is preparing master guide for <span style="color:var(--accent-gold); font-family:var(--font-heading);">"${dishName}"</span> ✦
+          </h3>
+          <p class="thinking-subtitle">Synthesizing step-by-step instructions, prep timers & nutritional macros...</p>
+          <div class="thinking-progress-bar">
+            <div class="thinking-progress-fill" style="background: linear-gradient(90deg, #10B981 0%, #FFB800 50%, #FF6B00 100%);"></div>
+          </div>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`${backendUrl}/requests/direct-guide`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipe_title: dishName,
+            cuisine: activeCuisine,
+            is_vegetarian: activeIsVegetarian
+          })
+        });
+
+        const json = await res.json();
+        const reqId = json.data ? json.data.request_id : Date.now();
+        const cookingGuide = json.success && json.data && json.data.cooking_guide ? json.data.cooking_guide : generateDynamicFallbackGuide(dishName);
+        
+        renderDirectStage2Guide(cookingGuide, reqId);
+      } catch (e) {
+        renderDirectStage2Guide(generateDynamicFallbackGuide(dishName), Date.now());
+      }
+    }
+
+    function renderDirectStage2Guide(guide, reqId) {
+      const resultWrapper = document.getElementById('direct-guide-result-wrapper');
+      if (!resultWrapper) return;
+      resultWrapper.style.display = 'block';
+      resultWrapper.innerHTML = `<div id="direct-guide-wrapper"></div>`;
+
+      renderStage2Guide(guide, reqId, 'direct-guide-wrapper');
+      resultWrapper.scrollIntoView({ behavior: 'smooth' });
+    }
+
     function selectCuisine(el, cuisine) {
       document.querySelectorAll('.cuisine-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
       activeCuisine = cuisine;
+    }
+
+    let currentInputMode = 'ingredients';
+
+    function switchInputMode(mode, el) {
+      currentInputMode = mode;
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const labelEl = document.getElementById('input-label-text');
+      const textGroup = document.getElementById('input-text-group');
+      const presetsGroup = document.getElementById('preset-chips-container');
+      const textarea = document.getElementById('ingredients-text');
+      const btnText = document.getElementById('btn-generate-text');
+
+      if (mode === 'ingredients') {
+        if (textGroup) textGroup.style.display = 'block';
+        if (labelEl) labelEl.innerText = 'Available Ingredients List:';
+        if (textarea) textarea.placeholder = 'e.g., tomatoes, potatoes, butter, garlic, spinach, chicken';
+        if (textarea && textarea.value.trim() === 'Paneer Butter Masala') textarea.value = 'tomatoes, potatoes, butter, garlic, spinach, chicken';
+        if (btnText) btnText.innerText = 'Generate 5 Recipe Candidates via Ollama';
+        if (presetsGroup) {
+          presetsGroup.innerHTML = `
+            <span class="preset-chip" onclick="addPreset('tomatoes')">+ Tomatoes</span>
+            <span class="preset-chip" onclick="addPreset('potatoes')">+ Potatoes</span>
+            <span class="preset-chip" onclick="addPreset('garlic')">+ Garlic</span>
+            <span class="preset-chip" onclick="addPreset('butter')">+ Butter</span>
+            <span class="preset-chip" onclick="addPreset('spinach')">+ Spinach</span>
+            <span class="preset-chip" onclick="addPreset('chicken')">+ Chicken</span>
+            <span class="preset-chip" onclick="addPreset('paneer')">+ Paneer</span>
+            <span class="preset-chip" onclick="addPreset('pasta')">+ Pasta</span>
+          `;
+        }
+      } else if (mode === 'recipename') {
+        if (textGroup) textGroup.style.display = 'block';
+        if (labelEl) labelEl.innerText = 'Direct Dish / Recipe Name:';
+        if (textarea) textarea.placeholder = 'e.g., Paneer Butter Masala, Garlic Bread, Chicken Biryani, Pasta Carbonara...';
+        if (textarea && (textarea.value.includes('tomatoes, potatoes') || textarea.value.trim() === '')) textarea.value = 'Paneer Butter Masala';
+        if (btnText) btnText.innerText = 'Generate 5 Gourmet Recipe Styles via Ollama';
+        if (presetsGroup) {
+          presetsGroup.innerHTML = `
+            <span class="preset-chip" onclick="setRecipeNamePreset('Paneer Butter Masala')">+ Paneer Butter Masala</span>
+            <span class="preset-chip" onclick="setRecipeNamePreset('Garlic Bread')">+ Garlic Bread</span>
+            <span class="preset-chip" onclick="setRecipeNamePreset('Chicken Biryani')">+ Chicken Biryani</span>
+            <span class="preset-chip" onclick="setRecipeNamePreset('White Sauce Pasta')">+ White Sauce Pasta</span>
+            <span class="preset-chip" onclick="setRecipeNamePreset('Mexican Tacos')">+ Mexican Tacos</span>
+            <span class="preset-chip" onclick="setRecipeNamePreset('Thai Green Curry')">+ Thai Green Curry</span>
+            <span class="preset-chip" onclick="setRecipeNamePreset('Dal Makhani')">+ Dal Makhani</span>
+          `;
+        }
+      } else if (mode === 'image') {
+        document.getElementById('image-file').click();
+      } else if (mode === 'voice') {
+        alert('Voice Audio recording mode activated! Speak ingredients or dish name clearly into your microphone.');
+      }
+    }
+
+    function setRecipeNamePreset(dishName) {
+      const textarea = document.getElementById('ingredients-text');
+      if (textarea) textarea.value = dishName;
     }
 
     function addPreset(item) {
@@ -3381,8 +3606,11 @@
       }, 1500);
     }
 
-    function renderStage2Guide(guide, reqId) {
-      const guideWrapper = document.getElementById('guide-wrapper');
+    function renderStage2Guide(guide, reqId, containerId = 'guide-wrapper') {
+      const targetId = containerId || 'guide-wrapper';
+      const guideWrapper = document.getElementById(targetId);
+      if (!guideWrapper) return;
+      guideWrapper.style.display = 'block';
       const recipeTitle = guide.recipe_title || guide.title || 'Selected Recipe';
       const targetReqId = reqId || guide.request_id || 0;
       const summary = guide.summary || guide.description || 'A masterfully crafted culinary creation.';
