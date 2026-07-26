@@ -3115,6 +3115,10 @@
         const cookingGuide = json.success && json.data && json.data.cooking_guide ? json.data.cooking_guide : generateDynamicFallbackGuide(dishName);
         
         renderDirectStage2Guide(cookingGuide, reqId);
+
+        try { loadDashboardStats(); } catch(e) {}
+        try { loadPopularRecipes(); } catch(e) {}
+        try { loadRecentRequests(); } catch(e) {}
       } catch (e) {
         renderDirectStage2Guide(generateDynamicFallbackGuide(dishName), Date.now());
       }
