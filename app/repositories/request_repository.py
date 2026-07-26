@@ -121,6 +121,11 @@ class RequestRepository(BaseRepository[Request]):
             if cooking_guide is not None:
                 output_obj.cooking_guide = cooking_guide
 
+        self.db.add(output_obj)
+        self.db.commit()
+        self.db.refresh(output_obj)
+        return output_obj
+
     def get_stats(self) -> dict[str, int]:
         """Calculate live statistics metrics directly from PostgreSQL database."""
         from sqlalchemy import func
@@ -202,4 +207,50 @@ class RequestRepository(BaseRepository[Request]):
             ]
 
         return popular_list
+
+    def find_existing_cooking_guide(self, recipe_title: str) -> dict[str, Any] | None:
+        """Query PostgreSQL DB for a pre-existing cached cooking_guide matching recipe_title (case-insensitive & normalized)."""
+        if not recipe_title or not recipe_title.strip():
+            return None
+
+        def _normalize(t: str) -> str:
+            # Lowercase, strip, collapse spaces, and fix common dish name typos like 'panner' -> 'paneer'
+            s = " ".join(t.lower().strip().split())
+            return s.replace("panner", "paneer")
+
+        clean_title = _normalize(recipe_title)
+        
+        stmt = (
+            select(RequestOutput)
+            .where(RequestOutput.cooking_guide.is_not(None))
+            .order_by(RequestOutput.id.desc())
+        )
+        outputs = self.db.execute(stmt).scalars().all()
+
+        for out in outputs:
+            guide = out.cooking_guide or {}
+            if not isinstance(guide, dict) or not guide.get("steps"):
+                continue
+
+            title_in_db = _normalize(guide.get("title") or guide.get("recipe_title") or "")
+            
+            selected_title = ""
+            if isinstance(out.selected_recipe, dict):
+                selected_title = _normalize(out.selected_recipe.get("title") or "")
+            elif isinstance(out.selected_recipe, str):
+                selected_title = _normalize(out.selected_recipe)
+
+            # Match exact normalized title, or substring matches for titles of sufficient length (>4 chars)
+            is_match = (
+                clean_title == title_in_db
+                or clean_title == selected_title
+                or (len(clean_title) > 4 and (clean_title in title_in_db or title_in_db in clean_title))
+                or (len(clean_title) > 4 and selected_title and (clean_title in selected_title or selected_title in clean_title))
+            )
+
+            if is_match:
+                return guide
+
+        return None
+
 

@@ -197,12 +197,26 @@ class RequestService:
         return response
 
     def select_recipe(self, request_id: int, recipe_title: str) -> RequestOutputResponse:
-        """Select a recipe option and trigger LLM Stage 2 Cooking Guide generation."""
+        """Select a recipe option and trigger Stage 2 Cooking Guide, using DB cache if recipe already exists."""
         # Invalidate details cache for this request
         get_redis_cache().delete(f"request:details:{request_id}")
 
-        # Update output with selected recipe choice
         selected_payload = {"title": recipe_title}
+
+        # 1. DB CACHE LOOKUP: Check if recipe guide for this dish name already exists in PostgreSQL
+        cached_guide = self.req_repo.find_existing_cooking_guide(recipe_title)
+        if cached_guide:
+            logger.info("⚡ CACHE HIT! Found existing cooking guide in DB for '%s'. Skipping Ollama LLM call!", recipe_title)
+            output_obj = self.req_repo.upsert_request_output(
+                request_id=request_id,
+                selected_recipe=selected_payload,
+                cooking_guide=cached_guide,
+            )
+            self.req_repo.update_status(request_id, RequestStatus.COMPLETED)
+            return RequestOutputResponse.model_validate(output_obj)
+
+        # 2. CACHE MISS: Update output with selected recipe choice and trigger LLM generation
+        logger.info("🤖 CACHE MISS! No existing guide in DB for '%s'. Invoking Ollama LLM...", recipe_title)
         output_obj = self.out_repo.upsert_output(
             request_id=request_id,
             selected_recipe=selected_payload,
@@ -229,6 +243,7 @@ class RequestService:
         updated_output = self.out_repo.get_by_request_id(request_id)
         return RequestOutputResponse.model_validate(updated_output or output_obj)
 
+
     def get_stats(self) -> dict[str, int]:
         """Fetch live PostgreSQL database statistics metrics."""
         return self.req_repo.get_stats()
@@ -250,7 +265,29 @@ class RequestService:
         cuisine: str | None = None,
         is_vegetarian: bool | None = None,
     ) -> RequestOutputResponse:
-        """Directly create a request and immediately generate complete Stage 2 Cooking Guide for a dish name."""
+        """Directly create a request and return complete Stage 2 Cooking Guide, checking PostgreSQL DB cache first."""
+
+        # 1. DB CACHE LOOKUP: Check if recipe guide for this dish name already exists in PostgreSQL
+        cached_guide = self.req_repo.find_existing_cooking_guide(recipe_title)
+        if cached_guide:
+            logger.info("⚡ CACHE HIT! Found existing cooking guide in DB for '%s'. Skipping Ollama LLM call!", recipe_title)
+            
+            request_obj = self.req_repo.create_request(
+                input_type=InputType.TEXT,
+                raw_text_input=f"Direct Dish (Cached): {recipe_title}",
+                cuisine=cuisine,
+                is_vegetarian=is_vegetarian,
+            )
+            output_obj = self.req_repo.upsert_request_output(
+                request_id=request_obj.id,
+                selected_recipe={"title": recipe_title},
+                cooking_guide=cached_guide,
+            )
+            self.req_repo.update_status(request_obj.id, RequestStatus.COMPLETED)
+            return RequestOutputResponse.model_validate(output_obj)
+
+        # 2. CACHE MISS: Call Ollama LLM to generate new recipe guide
+        logger.info("🤖 CACHE MISS! No existing guide in DB for '%s'. Invoking Ollama LLM...", recipe_title)
         request_obj = self.req_repo.create_request(
             input_type=InputType.TEXT,
             raw_text_input=f"Direct Dish: {recipe_title}",

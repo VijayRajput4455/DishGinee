@@ -322,12 +322,20 @@ Do not include any intro or outro text. Return valid JSON only.
             return False
 
         out_repo = RequestOutputRepository(db)
+        req_repo = RequestRepository(db)
 
-        # 1. Generate Stage 2 detailed cooking guide
-        guide = self.generate_stage2_guide(selected_recipe)
+        # 1. DB CACHE LOOKUP: Check if recipe guide for this dish name already exists in PostgreSQL
+        cached_guide = req_repo.find_existing_cooking_guide(selected_recipe)
+        if cached_guide:
+            logger.info("⚡ CACHE HIT! Found existing cooking guide in DB for '%s'. Skipping LLM call!", selected_recipe)
+            guide = cached_guide
+        else:
+            logger.info("🤖 CACHE MISS! Generating cooking guide via LLM for '%s'...", selected_recipe)
+            guide = self.generate_stage2_guide(selected_recipe)
 
         # 2. Update RequestOutput with cooking guide
         out_repo.upsert_output(request_id=request_id, cooking_guide=guide)
 
         logger.info("Successfully generated cooking guide for '%s' (Request #%s)", selected_recipe, request_id)
         return True
+
