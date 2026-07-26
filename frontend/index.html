@@ -117,6 +117,76 @@
       height: 100vh;
       z-index: 20;
       overflow-y: auto;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    }
+    .sidebar.collapsed {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* Attractive Glass Glow Sidebar Toggle Button */
+    .sidebar-toggle-btn-hero {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.16) 0%, rgba(255, 184, 0, 0.08) 100%);
+      border: 1px solid rgba(255, 107, 0, 0.45);
+      border-radius: 12px;
+      padding: 0.45rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-family: var(--font-body);
+      font-weight: 800;
+      font-size: 0.82rem;
+      color: #FFFFFF;
+      cursor: pointer;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 4px 15px rgba(255, 107, 0, 0.22);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar-toggle-btn-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+      transition: left 0.5s ease;
+    }
+    .sidebar-toggle-btn-hero:hover::before {
+      left: 100%;
+    }
+    .sidebar-toggle-btn-hero:hover {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.3) 0%, rgba(255, 184, 0, 0.2) 100%);
+      border-color: #FFB800;
+      box-shadow: 0 6px 22px rgba(255, 107, 0, 0.45), 0 0 14px rgba(255, 184, 0, 0.35);
+      transform: translateY(-1px) scale(1.04);
+    }
+    .sidebar-toggle-btn-hero:active {
+      transform: scale(0.96);
+    }
+
+    .sidebar-collapse-btn {
+      background: linear-gradient(135deg, rgba(255, 107, 0, 0.16) 0%, rgba(255, 184, 0, 0.08) 100%);
+      border: 1px solid rgba(255, 107, 0, 0.35);
+      border-radius: 10px;
+      color: #FFB800;
+      cursor: pointer;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(255, 107, 0, 0.15);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .sidebar-collapse-btn:hover {
+      background: linear-gradient(135deg, #FF6B00 0%, #FFA800 100%) !important;
+      color: #0F172A !important;
+      border-color: #FFA800 !important;
+      box-shadow: 0 4px 18px rgba(255, 107, 0, 0.5) !important;
+      transform: scale(1.08) rotate(-4deg);
     }
     .sidebar::-webkit-scrollbar { width: 3px; }
     .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
@@ -251,6 +321,11 @@
       padding: 1.5rem 2.25rem;
       position: relative;
       z-index: 10;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .main-content.expanded {
+      margin-left: 0;
+      width: 100%;
     }
 
     .app-view {
@@ -1062,20 +1137,29 @@
   <!-- Glass Sidebar Navigation -->
   <aside class="sidebar">
     <!-- Brand Logo -->
-    <div class="brand-logo">
-      <div class="logo-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#120E0C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          <circle cx="11" cy="11" r="2.5" fill="#120E0C"/>
+    <div class="brand-logo" style="justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:0.7rem;">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#120E0C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="2.5" fill="#120E0C"/>
+          </svg>
+        </div>
+        <div>
+          <span style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;">
+            <span style="color: #FFFFFF;">Dish</span><span style="color: #FF6B00;">Genie.AI</span>
+          </span>
+          <div style="font-size:0.62rem; color:#94A3B8; font-weight:600; font-family:var(--font-body); margin-top:-2px; letter-spacing:0.02em;">AI Powered Recipe Chef</div>
+        </div>
+      </div>
+      <button onclick="toggleSidebar()" class="sidebar-collapse-btn" style="background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; color:var(--text-secondary); cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease;" title="Hide Sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+          <path d="M15 15l-3-3 3-3"/>
         </svg>
-      </div>
-      <div>
-        <span style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;">
-          <span style="color: #FFFFFF;">Dish</span><span style="color: #FF6B00;">Genie.AI</span>
-        </span>
-        <div style="font-size:0.62rem; color:#94A3B8; font-weight:600; font-family:var(--font-body); margin-top:-2px; letter-spacing:0.02em;">AI Powered Recipe Chef</div>
-      </div>
+      </button>
     </div>
 
     <!-- Main Active Nav Pill -->
@@ -1113,10 +1197,10 @@
         <span>🌐</span> Cuisines
       </div>
       <div class="nav-item">
-        <span>👨‍🍳</span> Cooking Styles
+        <span>🥗</span> Healthy
       </div>
       <div class="nav-item">
-        <span>🥗</span> Diet Preferences
+        <span>⚡</span> Quick (15-min)
       </div>
     </div>
 
@@ -1165,11 +1249,28 @@
     
     <!-- TOP COMMON HEADER BAR -->
     <div class="header-bar">
-      <div>
-        <h1 class="greeting-title">Good evening, <span class="user-name">Vijay!</span> 👋</h1>
-        <p class="greeting-subtitle">
-          <span>Let's cook something amazing today</span> ✦
-        </p>
+      <div style="display:flex; align-items:center; gap:0.85rem;">
+        <!-- Attractive Hero Sidebar Toggle Button -->
+        <button class="sidebar-toggle-btn-hero" onclick="toggleSidebar()" title="Toggle Sidebar Navigation (Show / Hide)" aria-label="Toggle Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="18" height="18" rx="5" stroke="url(#sidebar-btn-grad)" stroke-width="2"/>
+            <path d="M9 3V21" stroke="url(#sidebar-btn-grad)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M14 10L12 12L14 14" stroke="#FFA800" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="sidebar-btn-grad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FF6B00"/>
+                <stop offset="1" stop-color="#FFB800"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span style="background: linear-gradient(135deg, #FFFFFF 0%, #FFD699 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:800;">Sidebar</span>
+        </button>
+        <div>
+          <h1 class="greeting-title">Good evening, <span class="user-name">Vijay!</span> 👋</h1>
+          <p class="greeting-subtitle">
+            <span>Let's cook something amazing today</span> ✦
+          </p>
+        </div>
       </div>
       
       <div class="top-actions">
@@ -2463,6 +2564,29 @@
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const mainContent = document.querySelector('.main-content');
+      if (!sidebar || !mainContent) return;
+
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      if (isCollapsed) {
+        mainContent.classList.add('expanded');
+        localStorage.setItem('sidebar_collapsed', 'true');
+      } else {
+        mainContent.classList.remove('expanded');
+        localStorage.setItem('sidebar_collapsed', 'false');
+      }
+    }
+
+    // Auto-restore sidebar collapsed preference on load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('sidebar_collapsed') === 'true') {
+        document.querySelector('.sidebar')?.classList.add('collapsed');
+        document.querySelector('.main-content')?.classList.add('expanded');
+      }
+    });
 
     function filterMyRequestsPage(status, el) {
       if (el) {
