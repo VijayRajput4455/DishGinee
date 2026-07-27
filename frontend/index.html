@@ -1477,43 +1477,37 @@
       <span style="font-size:1rem;">📊</span> Dashboard
     </div>
 
-    <!-- MAIN Section -->
+    <!-- INPUT STUDIOS Section -->
     <div class="nav-group">
-      <div class="nav-label">MAIN</div>
-      <div class="nav-item" id="nav-create" onclick="switchView('create')">
-        <span>➕</span> New Request
+      <div class="nav-label">INPUT STUDIOS</div>
+      <div class="nav-item active" id="nav-text-studio" onclick="switchView('text-studio')">
+        <span>📝</span> Text Ingredients
+      </div>
+      <div class="nav-item" id="nav-image-studio" onclick="switchView('image-studio')">
+        <span>📷</span> Image Scan (YOLO)
+      </div>
+      <div class="nav-item" id="nav-voice-studio" onclick="switchView('voice-studio')">
+        <span>🎤</span> Voice Audio (Whisper)
       </div>
       <div class="nav-item" id="nav-direct-guide" onclick="switchView('direct-guide')">
         <span>🍳</span> Direct Recipe Guide
-      </div>
-      <div class="nav-item" id="nav-requests" onclick="switchView('my-requests')">
-        <span>📜</span> My Requests
-      </div>
-      <div class="nav-item" id="nav-recipes" onclick="switchView('recipes')">
-        <span>🍲</span> Recipes
-      </div>
-      <div class="nav-item" id="nav-favorites" onclick="switchView('favorites')">
-        <span>❤️</span> Favorites
-      </div>
-      <div class="nav-item">
-        <span>📅</span> Meal Planner
-      </div>
-      <div class="nav-item">
-        <span>🛒</span> Shopping List
       </div>
     </div>
 
     <!-- EXPLORE Section -->
     <div class="nav-group">
-      <div class="nav-label">EXPLORE</div>
+      <div class="nav-label">EXPLORE & LIBRARY</div>
+      <div class="nav-item" id="nav-requests" onclick="switchView('my-requests')">
+        <span>📜</span> My Requests
+      </div>
+      <div class="nav-item" id="nav-recipes" onclick="switchView('recipes')">
+        <span>🍲</span> Recipe Library
+      </div>
+      <div class="nav-item" id="nav-favorites" onclick="switchView('favorites')">
+        <span>❤️</span> Favorites
+      </div>
       <div class="nav-item" id="nav-cuisines" onclick="switchView('cuisines')">
         <span>🌐</span> Cuisines
-      </div>
-      <div class="nav-item">
-        <span>🥗</span> Healthy
-      </div>
-      <div class="nav-item">
-        <span>⚡</span> Quick (15-min)
       </div>
     </div>
 
@@ -1915,72 +1909,47 @@
 
     </div>
 
-    <!-- VIEW 2: DEDICATED NEW RECIPE REQUEST STUDIO -->
-    <div id="view-new-request" class="app-view" style="display:none;">
+    <!-- VIEW 1: DEDICATED TEXT INGREDIENTS STUDIO -->
+    <div id="view-text-studio" class="app-view" style="display:block;">
       
       <!-- Studio Page Banner -->
       <div class="hero-request-card" style="margin-bottom:1.5rem;">
         <div class="hero-content">
           <h2 class="hero-title">
-            Recipe Generation <span class="cursive-highlight">Studio</span> 👨‍🍳
+            Text Ingredients <span class="cursive-highlight">Studio</span> 📝
           </h2>
           <p class="hero-desc">
-            Type your ingredients, record voice audio, or upload a photo to generate 5 AI recipe options via Ollama LLM!
+            Type your ingredients or click quick preset tags to generate 5 AI recipe options via Ollama LLM!
           </p>
           <div class="hero-badges">
-            <div class="hero-badge-tag"><span>👁️</span> Image Scan (YOLO)</div>
-            <div class="hero-badge-tag"><span>🎙️</span> Voice Audio (Whisper)</div>
+            <div class="hero-badge-tag"><span>📝</span> Direct Text Input</div>
+            <div class="hero-badge-tag"><span>🏷️</span> One-Click Ingredient Chips</div>
             <div class="hero-badge-tag"><span>🤖</span> 5 Ollama Candidates</div>
           </div>
-        </div>
-
-        <div class="hero-upload-box" onclick="document.getElementById('image-file').click()">
-          <div class="upload-cloud-icon">☁️</div>
-          <div style="font-weight:800; font-size:0.92rem; margin-bottom:0.15rem;">Drag & drop your image here</div>
-          <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:0.4rem;">or</div>
-          <button class="btn-choose-img" onclick="event.stopPropagation(); document.getElementById('image-file').click();">
-            <span>📤</span> Choose Image
-          </button>
-          <input type="file" id="image-file" accept="image/*" style="display:none;" onchange="handleFileSelect(this)">
-          <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.45rem;">JPG, PNG, WebP up to 10MB</div>
-          <div id="file-preview" style="margin-top:0.35rem; font-weight:700; color:var(--accent-orange); font-size:0.78rem;"></div>
         </div>
       </div>
 
       <!-- Glass Input Form Card -->
       <div class="glass-card" style="margin-bottom:1.75rem;">
         
-        <!-- Mode Tabs -->
-        <div class="tab-pills">
-          <button class="tab-pill active" id="tab-btn-ingredients" onclick="switchInputMode('ingredients', this)">
-            <span>🛒</span> By Ingredients List
-          </button>
-          <button class="tab-pill" id="tab-btn-image" onclick="switchInputMode('image', this)">
-            <span>📷</span> Refrigerator Scan (YOLO)
-          </button>
-          <button class="tab-pill" id="tab-btn-voice" onclick="switchInputMode('voice', this)">
-            <span>🎙️</span> Voice Audio (Whisper)
-          </button>
-        </div>
-
         <!-- Dietary Preference Selector Matrix -->
         <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
           Select Dietary Preference:
         </label>
-        <div id="diet-matrix-container" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
-          <div class="diet-card selected" id="diet-card-veg" onclick="selectDietPreference(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+        <div class="diet-matrix-container" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="diet-card selected" onclick="selectDietPreference(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
             <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌿</span>
             <div style="font-weight:800; font-size:0.82rem; color:var(--success);">Vegetarian Only</div>
             <div style="font-size:0.68rem; color:var(--text-secondary);">100% Meat & Egg Free</div>
           </div>
 
-          <div class="diet-card" id="diet-card-nonveg" onclick="selectDietPreference(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+          <div class="diet-card" onclick="selectDietPreference(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
             <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍗</span>
             <div style="font-weight:800; font-size:0.82rem; color:var(--accent-orange);">Non-Vegetarian</div>
             <div style="font-size:0.68rem; color:var(--text-secondary);">Includes Meat & Seafood</div>
           </div>
 
-          <div class="diet-card" id="diet-card-any" onclick="selectDietPreference(this, null)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+          <div class="diet-card" onclick="selectDietPreference(this, null)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer; transition:all 0.2s ease;">
             <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍽️</span>
             <div style="font-weight:800; font-size:0.82rem; color:var(--text-primary);">All / Any</div>
             <div style="font-size:0.68rem; color:var(--text-secondary);">No Restrictions</div>
@@ -1991,7 +1960,7 @@
         <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
           Select Target Cuisine Style:
         </label>
-        <div id="cuisine-matrix-container" class="cuisine-matrix">
+        <div class="cuisine-matrix" style="margin-bottom:1.25rem;">
           <div class="cuisine-card selected" onclick="selectCuisine(this, 'Indian')">
             <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇮🇳</span>
             <div style="font-weight:700; font-size:0.78rem;">Indian</div>
@@ -2016,12 +1985,20 @@
             <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌴</span>
             <div style="font-weight:700; font-size:0.78rem;">Mediterranean</div>
           </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Japanese')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍣</span>
+            <div style="font-weight:700; font-size:0.78rem;">Japanese</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Thai')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇹🇭</span>
+            <div style="font-weight:700; font-size:0.78rem;">Thai</div>
+          </div>
         </div>
 
         <!-- Text Input Area -->
-        <div id="input-text-group">
+        <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
-            <label id="input-label-text" style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem;">
+            <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem;">
               Available Ingredients List:
             </label>
             <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">Click quick tags to add</span>
@@ -2037,32 +2014,247 @@
             <span class="preset-chip" onclick="addPreset('chicken')">+ Chicken</span>
             <span class="preset-chip" onclick="addPreset('paneer')">+ Paneer</span>
             <span class="preset-chip" onclick="addPreset('pasta')">+ Pasta</span>
-            <span class="preset-chip" onclick="addPreset('olive oil')">+ Olive Oil</span>
           </div>
 
           <textarea id="ingredients-text" class="input-textarea" rows="2" placeholder="e.g., tomatoes, potatoes, butter, garlic, spinach, chicken">tomatoes, potatoes, butter, garlic, spinach, chicken</textarea>
         </div>
 
         <!-- Submit Button -->
-        <button class="btn-action" onclick="generateRecipes()">
-          <span>✦</span> <span id="btn-generate-text">Generate 5 Recipe Candidates via Ollama</span>
+        <button class="btn-action" onclick="generateRecipesTextStudio()">
+          <span>✦</span> <span>Generate 5 Recipe Candidates via Ollama</span>
         </button>
       </div>
 
-      <!-- Stage 1 Options Container -->
-      <div id="results-wrapper" style="display:none; margin-bottom:2rem;">
+      <!-- Results Container -->
+      <div id="text-results-wrapper" style="display:none; margin-bottom:2rem;">
         <div class="section-header">
           <h2 class="section-title">Ollama Candidate Recipe Options 📜</h2>
           <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.12); padding:0.3rem 0.75rem; border-radius:8px; border:1px solid var(--border-accent);">
             5 Options Generated
           </span>
         </div>
-        <div id="recipe-cards-container" class="recipe-grid"></div>
+        <div id="text-recipe-cards-container" class="recipe-grid"></div>
       </div>
 
-      <!-- Stage 2 Guide Container -->
-      <div id="guide-wrapper" style="display:none; margin-bottom:2rem;"></div>
+      <div id="text-guide-wrapper" style="display:none; margin-bottom:2rem;"></div>
+    </div>
 
+    <!-- VIEW 2: DEDICATED IMAGE SCAN STUDIO (YOLO) -->
+    <div id="view-image-studio" class="app-view" style="display:none;">
+      
+      <!-- Studio Page Banner -->
+      <div class="hero-request-card" style="margin-bottom:1.5rem;">
+        <div class="hero-content">
+          <h2 class="hero-title">
+            Image Scan <span class="cursive-highlight">Studio (YOLO)</span> 📷
+          </h2>
+          <p class="hero-desc">
+            Upload a refrigerator or food photo to run YOLO object detection, bounding-box rendering, and ingredient extraction!
+          </p>
+          <div class="hero-badges">
+            <div class="hero-badge-tag"><span>👁️</span> YOLO Bounding-Box Detection</div>
+            <div class="hero-badge-tag"><span>🥗</span> Ingredient Extraction</div>
+            <div class="hero-badge-tag"><span>🖼️</span> MinIO Object Storage</div>
+          </div>
+        </div>
+
+        <div class="hero-upload-box" onclick="document.getElementById('studio-image-file').click()">
+          <div class="upload-cloud-icon">📷</div>
+          <div style="font-weight:800; font-size:0.92rem; margin-bottom:0.15rem;">Click to upload refrigerator / food photo</div>
+          <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:0.4rem;">or drag and drop file</div>
+          <button class="btn-choose-img" onclick="event.stopPropagation(); document.getElementById('studio-image-file').click();">
+            <span>📤</span> Choose Image File
+          </button>
+          <input type="file" id="studio-image-file" accept="image/*" style="display:none;" onchange="handleStudioFileSelect(this)">
+          <div style="font-size:0.68rem; color:var(--text-muted); margin-top:0.45rem;">JPG, PNG, WebP up to 10MB</div>
+          <div id="studio-file-preview" style="margin-top:0.35rem; font-weight:700; color:var(--accent-orange); font-size:0.78rem;"></div>
+        </div>
+      </div>
+
+      <!-- Glass Input Form Card -->
+      <div class="glass-card" style="margin-bottom:1.75rem;">
+        
+        <!-- Dietary Preference Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Dietary Preference:
+        </label>
+        <div class="diet-matrix-container" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="diet-card selected" onclick="selectDietPreference(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌿</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--success);">Vegetarian Only</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">100% Meat & Egg Free</div>
+          </div>
+          <div class="diet-card" onclick="selectDietPreference(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍗</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--accent-orange);">Non-Vegetarian</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">Includes Meat & Seafood</div>
+          </div>
+          <div class="diet-card" onclick="selectDietPreference(this, null)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍽️</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--text-primary);">All / Any</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">No Restrictions</div>
+          </div>
+        </div>
+
+        <!-- Cuisine Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Target Cuisine Style:
+        </label>
+        <div class="cuisine-matrix" style="margin-bottom:1.25rem;">
+          <div class="cuisine-card selected" onclick="selectCuisine(this, 'Indian')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇮🇳</span>
+            <div style="font-weight:700; font-size:0.78rem;">Indian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Italian')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇮🇹</span>
+            <div style="font-weight:700; font-size:0.78rem;">Italian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Mexican')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇲🇽</span>
+            <div style="font-weight:700; font-size:0.78rem;">Mexican</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Asian')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">⛩️</span>
+            <div style="font-weight:700; font-size:0.78rem;">Asian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'French')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇫🇷</span>
+            <div style="font-weight:700; font-size:0.78rem;">French</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Mediterranean')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌴</span>
+            <div style="font-weight:700; font-size:0.78rem;">Mediterranean</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Japanese')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍣</span>
+            <div style="font-weight:700; font-size:0.78rem;">Japanese</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Thai')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇹🇭</span>
+            <div style="font-weight:700; font-size:0.78rem;">Thai</div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button class="btn-action" onclick="generateRecipesImageStudio()">
+          <span>🔍</span> <span>Run YOLO Detection & Generate Recipes</span>
+        </button>
+      </div>
+
+      <!-- Results Container -->
+      <div id="image-results-wrapper" style="display:none; margin-bottom:2rem;">
+        <div id="image-recipe-cards-container" class="recipe-grid"></div>
+      </div>
+
+      <div id="image-guide-wrapper" style="display:none; margin-bottom:2rem;"></div>
+    </div>
+
+    <!-- VIEW 3: DEDICATED VOICE AUDIO STUDIO (WHISPER) -->
+    <div id="view-voice-studio" class="app-view" style="display:none;">
+      
+      <!-- Studio Page Banner -->
+      <div class="hero-request-card" style="margin-bottom:1.5rem;">
+        <div class="hero-content">
+          <h2 class="hero-title">
+            Voice Audio <span class="cursive-highlight">Studio (Whisper)</span> 🎤
+          </h2>
+          <p class="hero-desc">
+            Record voice audio or upload audio files to transcribe ingredients using OpenAI Whisper AI!
+          </p>
+          <div class="hero-badges">
+            <div class="hero-badge-tag"><span>🎙️</span> Whisper Speech-to-Text</div>
+            <div class="hero-badge-tag"><span>🗣️</span> Multi-Lingual Speech Processing</div>
+            <div class="hero-badge-tag"><span>🤖</span> 5 Ollama Candidates</div>
+          </div>
+        </div>
+
+        <div style="position:relative; z-index:2; border:1.5px dashed rgba(6,182,212,0.4); border-radius:14px; padding:1.25rem 1rem; text-align:center; background:rgba(0,0,0,0.35); cursor:pointer;" onclick="document.getElementById('voice-file').click()">
+          <div style="font-size:2.2rem; color:var(--accent-cyan); margin-bottom:0.3rem;">🎤</div>
+          <div style="font-weight:800; font-size:0.92rem; margin-bottom:0.15rem;">Click to upload voice recording</div>
+          <div style="color:var(--text-muted); font-size:0.75rem; margin-bottom:0.4rem;">WAV, MP3, M4A up to 15MB</div>
+          <button class="btn-choose-img" style="background:linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);" onclick="event.stopPropagation(); document.getElementById('voice-file').click();">
+            <span>🎙️</span> Choose Audio File
+          </button>
+          <input type="file" id="voice-file" accept="audio/*" style="display:none;" onchange="handleVoiceFileSelect(this)">
+          <div id="voice-file-preview" style="margin-top:0.35rem; font-weight:700; color:var(--accent-cyan); font-size:0.78rem;"></div>
+        </div>
+      </div>
+
+      <!-- Glass Form Card -->
+      <div class="glass-card" style="margin-bottom:1.75rem;">
+        
+        <!-- Dietary Preference Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Dietary Preference:
+        </label>
+        <div class="diet-matrix-container" style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="diet-card selected" onclick="selectDietPreference(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌿</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--success);">Vegetarian Only</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">100% Meat & Egg Free</div>
+          </div>
+          <div class="diet-card" onclick="selectDietPreference(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍗</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--accent-orange);">Non-Vegetarian</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">Includes Meat & Seafood</div>
+          </div>
+          <div class="diet-card" onclick="selectDietPreference(this, null)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍽️</span>
+            <div style="font-weight:800; font-size:0.82rem; color:var(--text-primary);">All / Any</div>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">No Restrictions</div>
+          </div>
+        </div>
+
+        <!-- Cuisine Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Target Cuisine Style:
+        </label>
+        <div class="cuisine-matrix" style="margin-bottom:1.25rem;">
+          <div class="cuisine-card selected" onclick="selectCuisine(this, 'Indian')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇮🇳</span>
+            <div style="font-weight:700; font-size:0.78rem;">Indian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Italian')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇮🇹</span>
+            <div style="font-weight:700; font-size:0.78rem;">Italian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Mexican')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇲🇽</span>
+            <div style="font-weight:700; font-size:0.78rem;">Mexican</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Asian')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">⛩️</span>
+            <div style="font-weight:700; font-size:0.78rem;">Asian</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'French')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇫🇷</span>
+            <div style="font-weight:700; font-size:0.78rem;">French</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Mediterranean')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌴</span>
+            <div style="font-weight:700; font-size:0.78rem;">Mediterranean</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Japanese')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍣</span>
+            <div style="font-weight:700; font-size:0.78rem;">Japanese</div>
+          </div>
+          <div class="cuisine-card" onclick="selectCuisine(this, 'Thai')">
+            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇹🇭</span>
+            <div style="font-weight:700; font-size:0.78rem;">Thai</div>
+          </div>
+        </div>
+
+        <button class="btn-action" style="background:linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);" onclick="generateRecipesVoiceStudio()">
+          <span>🎙️</span> <span>Transcribe Voice & Generate Recipes</span>
+        </button>
+      </div>
+
+      <!-- Results Container -->
+      <div id="voice-results-wrapper" style="display:none; margin-bottom:2rem;">
+        <div id="voice-recipe-cards-container" class="recipe-grid"></div>
+      </div>
+
+      <div id="voice-guide-wrapper" style="display:none; margin-bottom:2rem;"></div>
     </div>
 
     <!-- VIEW: DEDICATED DIRECT DISH RECIPE COOKING GUIDE SEARCH -->
@@ -2108,21 +2300,6 @@
         </div>
 
         <input type="text" id="direct-dish-input" class="input-textarea" style="height:52px; font-size:1.05rem; font-weight:700; color:#FFFFFF; margin-bottom:1.25rem;" placeholder="e.g., Paneer Butter Masala, Garlic Bread, Chicken Biryani, Pasta Carbonara..." value="Paneer Butter Masala">
-
-        <!-- Dietary Preference Selector Matrix -->
-        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
-          Select Dietary Preference:
-        </label>
-        <div style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
-          <div class="diet-card selected" id="direct-diet-veg" onclick="selectDietPreferenceDirect(this, true)" style="flex:1; min-width:140px; background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.4); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
-            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🌿</span>
-            <div style="font-weight:800; font-size:0.82rem; color:var(--success);">Vegetarian Only</div>
-          </div>
-          <div class="diet-card" id="direct-diet-nonveg" onclick="selectDietPreferenceDirect(this, false)" style="flex:1; min-width:140px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:0.65rem 0.85rem; text-align:center; cursor:pointer;">
-            <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🍗</span>
-            <div style="font-weight:800; font-size:0.82rem; color:var(--accent-orange);">Non-Vegetarian</div>
-          </div>
-        </div>
 
         <!-- Submit Action Button -->
         <button class="btn-action" onclick="fetchDirectCookingGuide()">
@@ -2927,9 +3104,15 @@
       let targetId = 'view-dashboard';
       let navId = 'nav-dashboard';
 
-      if (viewName === 'create') {
-        targetId = 'view-new-request';
-        navId = 'nav-create';
+      if (viewName === 'text-studio' || viewName === 'create') {
+        targetId = 'view-text-studio';
+        navId = 'nav-text-studio';
+      } else if (viewName === 'image-studio') {
+        targetId = 'view-image-studio';
+        navId = 'nav-image-studio';
+      } else if (viewName === 'voice-studio') {
+        targetId = 'view-voice-studio';
+        navId = 'nav-voice-studio';
       } else if (viewName === 'direct-guide') {
         targetId = 'view-direct-guide';
         navId = 'nav-direct-guide';
@@ -3188,7 +3371,24 @@
 
     function handleFileSelect(input) {
       if (input.files && input.files[0]) {
-        document.getElementById('file-preview').innerText = `Selected: ${input.files[0].name} (${(input.files[0].size / 1024).toFixed(1)} KB)`;
+        const file = input.files[0];
+        const previewEl = document.getElementById('file-preview');
+        if (previewEl) {
+          previewEl.innerHTML = `
+            <div style="margin-top:0.4rem; background:rgba(255,107,0,0.12); padding:0.4rem 0.65rem; border-radius:8px; border:1px solid var(--border-accent); display:inline-block;">
+              📸 <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)
+            </div>
+          `;
+        }
+        const btnText = document.getElementById('btn-generate-text');
+        if (btnText) {
+          btnText.innerText = 'Run YOLO Detection & Generate Recipes';
+        }
+        const tabBtn = document.getElementById('tab-btn-image');
+        if (tabBtn) {
+          document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+          tabBtn.classList.add('active');
+        }
       }
     }
 
@@ -3210,23 +3410,41 @@
       });
     }
 
-    async function generateRecipes() {
+    function handleStudioFileSelect(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const previewEl = document.getElementById('studio-file-preview');
+        if (previewEl) {
+          previewEl.innerHTML = `
+            <div style="margin-top:0.4rem; background:rgba(255,107,0,0.12); padding:0.4rem 0.65rem; border-radius:8px; border:1px solid var(--border-accent); display:inline-block;">
+              📸 <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)
+            </div>
+          `;
+        }
+      }
+    }
+
+    function handleVoiceFileSelect(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const previewEl = document.getElementById('voice-file-preview');
+        if (previewEl) {
+          previewEl.innerHTML = `
+            <div style="margin-top:0.4rem; background:rgba(6,182,212,0.12); padding:0.4rem 0.65rem; border-radius:8px; border:1px solid rgba(6,182,212,0.4); display:inline-block;">
+              🎙️ <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function generateRecipesTextStudio() {
       const ingredientsText = document.getElementById('ingredients-text').value.trim();
-      const fileInput = document.getElementById('image-file');
-      const resultsWrapper = document.getElementById('results-wrapper');
-      const cardsContainer = document.getElementById('recipe-cards-container');
+      const resultsWrapper = document.getElementById('text-results-wrapper');
+      const cardsContainer = document.getElementById('text-recipe-cards-container');
       
       resultsWrapper.style.display = 'block';
-      const rawText = ingredientsText || 'Tomatoes, Garlic, Butter';
-      const ingList = rawText.split(',').map(i => i.trim()).filter(Boolean);
-      const b1T = ingList[0] ? ingList[0] : 'Smart Detection';
-      const b1I = ingList[0] ? '✨' : '👁️';
-      const b2T = ingList[1] ? ingList[1] : '5 Candidates';
-      const b2I = ingList[1] ? '🧄' : '🍲';
-      const b3T = ingList[2] ? ingList[2] : 'Macro Estimates';
-      const b3I = ingList[2] ? '🧈' : '🥗';
-      const b4T = ingList[3] ? ingList[3] : (ingList.length > 3 ? `+${ingList.length - 3} Extra` : 'Ollama AI');
-      const b4I = ingList[3] ? '🧂' : (ingList.length > 3 ? '➕' : '👨‍🍳');
+      resultsWrapper.scrollIntoView({ behavior: 'smooth' });
 
       cardsContainer.innerHTML = `
         <div class="chef-thinking-container">
@@ -3236,77 +3454,202 @@
             <span class="flame-particle f3">✨</span>
             <div class="chef-character-box">
               <div class="chef-icon-animated">👨‍🍳</div>
-              <div class="thought-bubbles">
-                <span class="bubble b1">🍅</span>
-                <span class="bubble b2">🥔</span>
-                <span class="bubble b3">🧄</span>
-                <span class="bubble b4">✨</span>
-                <span class="bubble b5">💭</span>
-              </div>
             </div>
           </div>
-
           <h3 class="thinking-title">Chef Genie is thinking about your ingredients... ✦</h3>
           <p class="thinking-subtitle" id="stage1-live-ticker">
             Analyzing ingredients & crafting 5 recipe candidates via Ollama LLM...
           </p>
-
-          <div class="thinking-progress-bar">
-            <div class="thinking-progress-fill"></div>
-          </div>
-
-          <!-- Dynamic Ingredient Item Badges with Moving Active Pulse Animation -->
-          <div class="loading-step-badges">
-            <div class="loading-badge active" id="s1badge-1"><span class="badge-icon">${b1I}</span> ${b1T}</div>
-            <div class="loading-badge" id="s1badge-2"><span class="badge-icon">${b2I}</span> ${b2T}</div>
-            <div class="loading-badge" id="s1badge-3"><span class="badge-icon">${b3I}</span> ${b3T}</div>
-            <div class="loading-badge" id="s1badge-4"><span class="badge-icon">${b4I}</span> ${b4T}</div>
-          </div>
+          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
         </div>
       `;
 
       startStage1Ticker();
 
       try {
-        let endpoint = `${backendUrl}/requests/text`;
-        let body;
-        let headers = {};
-
-        if (fileInput.files && fileInput.files[0]) {
-          endpoint = `${backendUrl}/requests/image`;
-          const formData = new FormData();
-          formData.append('file', fileInput.files[0]);
-          if (activeCuisine) formData.append('cuisine', activeCuisine);
-          if (activeIsVegetarian !== null && activeIsVegetarian !== undefined) {
-            formData.append('is_vegetarian', activeIsVegetarian);
-          }
-          body = formData;
-        } else {
-          headers = { 'Content-Type': 'application/json' };
-          body = JSON.stringify({
+        const res = await fetch(`${backendUrl}/requests/text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             raw_text_input: ingredientsText || 'tomatoes, potatoes, garlic, butter',
             cuisine: activeCuisine,
             is_vegetarian: activeIsVegetarian
-          });
-        }
-
-        const res = await fetch(endpoint, { method: 'POST', headers, body });
-        let json;
-        try {
-          json = await res.json();
-        } catch (parseErr) {
-          json = { success: false, error: 'Server temporarily busy or returned non-JSON response.' };
-        }
-        
+          })
+        });
+        const json = await res.json();
         if (json.success && json.data && json.data.id) {
-          const reqId = json.data.id;
-          pollForStage1(reqId);
+          pollForStage1Custom(json.data.id, 'text-recipe-cards-container');
         } else {
-          pollForStage1(Date.now());
+          pollForStage1Custom(Date.now(), 'text-recipe-cards-container');
         }
       } catch (err) {
-        pollForStage1(Date.now());
+        pollForStage1Custom(Date.now(), 'text-recipe-cards-container');
       }
+    }
+
+    async function generateRecipesImageStudio() {
+      const fileInput = document.getElementById('studio-image-file');
+      if (!fileInput.files || !fileInput.files[0]) {
+        alert('Please choose or upload a food/refrigerator image first!');
+        return;
+      }
+
+      const resultsWrapper = document.getElementById('image-results-wrapper');
+      const cardsContainer = document.getElementById('image-recipe-cards-container');
+      
+      resultsWrapper.style.display = 'block';
+      resultsWrapper.scrollIntoView({ behavior: 'smooth' });
+
+      cardsContainer.innerHTML = `
+        <div class="chef-thinking-container">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">👁️</div>
+            </div>
+          </div>
+          <h3 class="thinking-title">Chef Genie is running YOLO Object Detection on your image... ✦</h3>
+          <p class="thinking-subtitle" id="stage1-live-ticker">
+            Extracting food bounding boxes & generating recipes via Ollama...
+          </p>
+          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
+        </div>
+      `;
+
+      startStage1Ticker();
+
+      try {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        if (activeCuisine) formData.append('cuisine', activeCuisine);
+        if (activeIsVegetarian !== null && activeIsVegetarian !== undefined) {
+          formData.append('is_vegetarian', activeIsVegetarian);
+        }
+
+        const res = await fetch(`${backendUrl}/requests/image`, { method: 'POST', body: formData });
+        const json = await res.json();
+        
+        if (json.success && json.data && json.data.id) {
+          let dbRecipes = null;
+          let imageRecord = null;
+          let rawIngredients = null;
+
+          if (json.data.images && json.data.images.length > 0) imageRecord = json.data.images[0];
+          if (json.data.output) {
+            if (json.data.output.ingredients) rawIngredients = json.data.output.ingredients;
+            if (json.data.output.recipes && Array.isArray(json.data.output.recipes)) dbRecipes = json.data.output.recipes;
+          }
+
+          if (dbRecipes && dbRecipes.length > 0) {
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+            renderStage1Cards(json.data.id, dbRecipes, imageRecord, rawIngredients, 'image-recipe-cards-container');
+          } else {
+            pollForStage1Custom(json.data.id, 'image-recipe-cards-container');
+          }
+        } else {
+          pollForStage1Custom(Date.now(), 'image-recipe-cards-container');
+        }
+      } catch (err) {
+        pollForStage1Custom(Date.now(), 'image-recipe-cards-container');
+      }
+    }
+
+    async function generateRecipesVoiceStudio() {
+      const fileInput = document.getElementById('voice-file');
+      if (!fileInput.files || !fileInput.files[0]) {
+        alert('Please upload a voice audio recording file first!');
+        return;
+      }
+
+      const resultsWrapper = document.getElementById('voice-results-wrapper');
+      const cardsContainer = document.getElementById('voice-recipe-cards-container');
+      
+      resultsWrapper.style.display = 'block';
+      resultsWrapper.scrollIntoView({ behavior: 'smooth' });
+
+      cardsContainer.innerHTML = `
+        <div class="chef-thinking-container">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">🎙️</div>
+            </div>
+          </div>
+          <h3 class="thinking-title">Chef Genie is transcribing voice audio via Whisper AI... ✦</h3>
+          <p class="thinking-subtitle" id="stage1-live-ticker">
+            Converting audio speech to text & generating recipes...
+          </p>
+          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
+        </div>
+      `;
+
+      startStage1Ticker();
+
+      try {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        if (activeCuisine) formData.append('cuisine', activeCuisine);
+        if (activeIsVegetarian !== null && activeIsVegetarian !== undefined) {
+          formData.append('is_vegetarian', activeIsVegetarian);
+        }
+
+        const res = await fetch(`${backendUrl}/requests/voice`, { method: 'POST', body: formData });
+        const json = await res.json();
+        
+        if (json.success && json.data && json.data.id) {
+          pollForStage1Custom(json.data.id, 'voice-recipe-cards-container');
+        } else {
+          pollForStage1Custom(Date.now(), 'voice-recipe-cards-container');
+        }
+      } catch (err) {
+        pollForStage1Custom(Date.now(), 'voice-recipe-cards-container');
+      }
+    }
+
+    async function pollForStage1Custom(reqId, targetContainerId = 'text-recipe-cards-container') {
+      let attempts = 0;
+
+      const interval = setInterval(async () => {
+        attempts++;
+        try {
+          const res = await fetch(`${backendUrl}/requests/${reqId}`);
+          const json = await res.json();
+
+          let dbRecipes = null;
+          let imageRecord = null;
+          let rawIngredients = null;
+
+          if (json.success && json.data) {
+            if (json.data.images && json.data.images.length > 0) imageRecord = json.data.images[0];
+            if (json.data.output) {
+              if (json.data.output.ingredients) rawIngredients = json.data.output.ingredients;
+              if (json.data.output.recipes && Array.isArray(json.data.output.recipes)) dbRecipes = json.data.output.recipes;
+            }
+          }
+
+          if (dbRecipes && dbRecipes.length > 0) {
+            clearInterval(interval);
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+            renderStage1Cards(reqId, dbRecipes, imageRecord, rawIngredients, targetContainerId);
+          } else if (attempts >= 15) {
+            clearInterval(interval);
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+            const ingredientsText = document.getElementById('ingredients-text').value.trim() || 'Tomatoes, Garlic, Butter';
+            renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine), imageRecord, rawIngredients, targetContainerId);
+          }
+        } catch (e) {
+          if (attempts >= 15) {
+            clearInterval(interval);
+            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+            const ingredientsText = document.getElementById('ingredients-text').value.trim() || 'Tomatoes, Garlic, Butter';
+            renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine), null, null, targetContainerId);
+          }
+        }
+      }, 1000);
     }
 
     let stage1TickerInterval = null;
@@ -3341,8 +3684,6 @@
     }
 
     async function pollForStage1(reqId) {
-      const cardsContainer = document.getElementById('recipe-cards-container');
-      const ingredientsText = document.getElementById('ingredients-text').value.trim() || 'Tomatoes, Garlic, Butter';
       let attempts = 0;
 
       const interval = setInterval(async () => {
@@ -3352,43 +3693,108 @@
           const json = await res.json();
 
           let dbRecipes = null;
-          if (json.success && json.data && json.data.output && json.data.output.ingredients) {
-            const ingOutput = json.data.output.ingredients;
-            if (Array.isArray(ingOutput)) {
-              dbRecipes = ingOutput;
-            } else if (ingOutput.recipes && Array.isArray(ingOutput.recipes)) {
-              dbRecipes = ingOutput.recipes;
+          let imageRecord = null;
+          let rawIngredients = null;
+
+          if (json.success && json.data) {
+            if (json.data.images && json.data.images.length > 0) {
+              imageRecord = json.data.images[0];
+            }
+            if (json.data.output) {
+              if (json.data.output.ingredients) rawIngredients = json.data.output.ingredients;
+              if (json.data.output.recipes && Array.isArray(json.data.output.recipes)) dbRecipes = json.data.output.recipes;
             }
           }
 
           if (dbRecipes && dbRecipes.length > 0) {
             clearInterval(interval);
             if (stage1TickerInterval) clearInterval(stage1TickerInterval);
-            renderStage1Cards(reqId, dbRecipes);
+            renderStage1Cards(reqId, dbRecipes, imageRecord, rawIngredients);
           } else if (attempts >= 15) {
             clearInterval(interval);
             if (stage1TickerInterval) clearInterval(stage1TickerInterval);
-            renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine));
+            const ingredientsText = document.getElementById('ingredients-text').value.trim() || 'Tomatoes, Garlic, Butter';
+            renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine), imageRecord, rawIngredients);
           }
         } catch (e) {
           if (attempts >= 15) {
             clearInterval(interval);
             if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+            const ingredientsText = document.getElementById('ingredients-text').value.trim() || 'Tomatoes, Garlic, Butter';
             renderStage1Cards(reqId, generateDynamicFallbackRecipes(ingredientsText, activeCuisine));
           }
         }
       }, 1000);
     }
 
-    function renderStage1Cards(reqId, recipes) {
-      const cardsContainer = document.getElementById('recipe-cards-container');
-      const ingredientsText = document.getElementById('ingredients-text').value.trim();
+    function renderStage1Cards(reqId, recipes, imageRecord = null, rawIngredients = null, targetContainerId = 'text-recipe-cards-container') {
+      const cardsContainer = document.getElementById(targetContainerId) || document.getElementById('text-recipe-cards-container');
+      if (!cardsContainer) return;
       cardsContainer.innerHTML = '';
+
+      if (rawIngredients && Array.isArray(rawIngredients) && rawIngredients.length > 0) {
+        const ingredientNames = rawIngredients.map(i => typeof i === 'object' ? i.name : i);
+        const textarea = document.getElementById('ingredients-text');
+        if (textarea) textarea.value = ingredientNames.join(', ');
+
+        const annotatedUrl = (imageRecord && (imageRecord.annotated_image || imageRecord.original_image)) 
+          ? (imageRecord.annotated_image || imageRecord.original_image) 
+          : null;
+
+        const yoloHeader = document.createElement('div');
+        yoloHeader.className = 'glass-card';
+        yoloHeader.style.cssText = 'grid-column: 1 / -1; margin-bottom: 1.5rem; border: 1.5px solid var(--border-accent); background: linear-gradient(135deg, rgba(255,107,0,0.12) 0%, rgba(14,19,31,0.95) 100%); padding: 1.35rem;';
+        
+        yoloHeader.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.15rem;">
+            <div>
+              <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.15); padding:0.28rem 0.72rem; border-radius:8px; border:1px solid var(--border-accent);">
+                👁️ YOLO Computer Vision Detection Active
+              </span>
+              <h3 style="font-family:var(--font-heading); font-size:1.35rem; font-weight:800; color:#FFFFFF; margin-top:0.4rem;">
+                Extracted Food & Refrigerator Ingredients Scan
+              </h3>
+            </div>
+            <span style="font-size:0.78rem; color:var(--text-muted); font-weight:800; background:rgba(0,0,0,0.4); padding:0.3rem 0.7rem; border-radius:8px;">
+              Request #${reqId}
+            </span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1.35rem; align-items:center;">
+            ${annotatedUrl ? `
+              <div style="position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--border-accent); background:#000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                <img src="${annotatedUrl}" style="width:100%; height:200px; object-fit:cover; display:block;" alt="YOLO Detection Annotated Image" onerror="this.style.display='none'">
+                <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.85); padding:0.25rem 0.6rem; border-radius:6px; font-size:0.7rem; color:#10B981; font-weight:800; border:1px solid rgba(16,185,129,0.4);">
+                  ✓ YOLO Bounding Boxes Rendered
+                </div>
+              </div>
+            ` : ''}
+
+            <div>
+              <div style="font-size:0.88rem; font-weight:800; color:var(--accent-gold); margin-bottom:0.75rem;">
+                🥗 Detected Ingredients (${rawIngredients.length} Items Found):
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                ${rawIngredients.map(ing => {
+                  const name = typeof ing === 'object' ? ing.name : ing;
+                  const conf = typeof ing === 'object' && ing.confidence ? ` (${Math.round(ing.confidence * 100)}%)` : '';
+                  return `
+                    <span style="padding:0.45rem 0.85rem; border-radius:10px; background:linear-gradient(135deg, rgba(255,107,0,0.22) 0%, rgba(255,184,0,0.12) 100%); border:1px solid var(--border-accent); color:#FFFFFF; font-size:0.82rem; font-weight:800; display:inline-flex; align-items:center; gap:0.35rem; box-shadow:0 2px 10px rgba(255,107,0,0.15);">
+                      <span>🌿</span> ${name}${conf}
+                    </span>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+        cardsContainer.appendChild(yoloHeader);
+      }
 
       recipes.forEach((recipe, idx) => {
         const title = recipe.title || recipe.recipe_title || 'Recipe Candidate';
-        const desc = recipe.description || recipe.summary || `Appetizing dish prepared with ${ingredientsText}`;
-        const keyIngs = recipe.matched_ingredients || recipe.key_ingredients || (ingredientsText ? ingredientsText.split(',') : []);
+        const desc = recipe.description || recipe.summary || `Appetizing dish prepared with detected ingredients`;
+        const keyIngs = recipe.matched_ingredients || recipe.key_ingredients || (rawIngredients ? rawIngredients.map(i => typeof i === 'object' ? i.name : i) : []);
         const prepTime = recipe.prep_time || (recipe.estimated_time_minutes ? `${recipe.estimated_time_minutes} mins` : '20 mins');
         const difficulty = recipe.difficulty || 'Medium';
 
@@ -3400,7 +3806,7 @@
             <h3 style="font-family:var(--font-heading); font-size:1.1rem; font-weight:800; margin-bottom:0.45rem; color:#FFFFFF;">${title}</h3>
             <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4; margin-bottom:0.85rem;">${desc}</p>
             <div style="margin-bottom:0.85rem;">
-              ${(keyIngs || []).map(i => `<span style="display:inline-block; padding:0.2rem 0.5rem; border-radius:6px; background:rgba(255,107,0,0.14); color:var(--accent-orange); font-size:0.72rem; font-weight:700; margin-right:0.25rem; margin-bottom:0.25rem;">${i.trim()}</span>`).join('')}
+              ${(keyIngs || []).map(i => `<span style="display:inline-block; padding:0.2rem 0.5rem; border-radius:6px; background:rgba(255,107,0,0.14); color:var(--accent-orange); font-size:0.72rem; font-weight:700; margin-right:0.25rem; margin-bottom:0.25rem;">${(typeof i === 'string' ? i : i.name).trim()}</span>`).join('')}
             </div>
           </div>
           <div>

@@ -68,6 +68,20 @@ class MinIOService:
         # Fallback return URI if MinIO service is offline or uninstalled
         return f"minio://{self.bucket_name}/{object_name}"
 
+    def download_file(self, object_name: str) -> bytes | None:
+        """Download binary object data from MinIO object storage."""
+        clean_key = object_name.replace(f"minio://{self.bucket_name}/", "")
+        if self.client is not None:
+            try:
+                response = self.client.get_object(self.bucket_name, clean_key)
+                data = response.read()
+                response.close()
+                response.release_conn()
+                return data
+            except Exception as e:
+                print(f"[MinIOService] Error downloading object '{clean_key}': {e}")
+        return None
+
     def get_presigned_url(self, object_name: str, expires_seconds: int = 3600) -> str:
         """Generate a presigned GET URL for secure client access."""
         clean_key = object_name.replace(f"minio://{self.bucket_name}/", "")

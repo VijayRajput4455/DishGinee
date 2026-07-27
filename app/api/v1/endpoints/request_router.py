@@ -63,7 +63,7 @@ def create_text_request(
 
 @router.post(
     "/image",
-    response_model=APIResponse[RequestResponse],
+    response_model=APIResponse[RequestDetailResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Upload Refrigerator/Food Image",
     description="Upload an image file and optional cuisine preference to detect ingredients using YOLO and generate recipes.",

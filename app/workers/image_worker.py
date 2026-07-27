@@ -41,7 +41,11 @@ class YOLOImageWorker:
         try:
             from PIL import Image, ImageDraw, ImageFont
 
-            img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            try:
+                img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            except Exception:
+                img = Image.new("RGB", (400, 400), color=(245, 245, 245))
+
             draw = ImageDraw.Draw(img)
 
             if self.model is not None:
@@ -111,11 +115,16 @@ class YOLOImageWorker:
 
         # 2. Download raw image from MinIO
         clean_key = image_url.replace(f"minio://{self.minio_service.bucket_name}/", "")
-        # Download or use fallback mock image bytes
-        mock_raw_bytes = b"\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xFF\xDB\x00C\x00"
+        raw_bytes = self.minio_service.download_file(clean_key)
+        if not raw_bytes:
+            logger.warning("Could not download raw image from MinIO for key '%s'. Using fallback image bytes.", clean_key)
+            from PIL import Image
+            fallback_buf = io.BytesIO()
+            Image.new("RGB", (400, 400), color=(245, 245, 245)).save(fallback_buf, format="JPEG")
+            raw_bytes = fallback_buf.getvalue()
 
         # 3. Perform YOLO detection & annotation
-        detected_ingredients, annotated_bytes = self.detect_ingredients(mock_raw_bytes)
+        detected_ingredients, annotated_bytes = self.detect_ingredients(raw_bytes)
 
         # 4. Upload annotated image to MinIO
         annotated_key = f"annotated/{uuid.uuid4()}_annotated.jpg"

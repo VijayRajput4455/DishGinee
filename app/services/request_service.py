@@ -119,7 +119,7 @@ class RequestService:
 
         return RequestResponse.model_validate(request_obj)
 
-    def create_image_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None, is_vegetarian: bool | None = None) -> RequestResponse:
+    def create_image_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None, is_vegetarian: bool | None = None) -> RequestDetailResponse:
         """Upload raw image to MinIO, create request & image record, and publish YOLO detection task."""
         object_key = f"raw/{uuid.uuid4()}_{filename}"
         image_storage_url = self.minio_service.upload_file(
@@ -152,18 +152,33 @@ class RequestService:
             db=self.db,
         )
 
+        output_record = self.out_repo.get_by_request_id(request_obj.id)
+        if output_record and output_record.ingredients:
+            extracted_ingredients = [
+                item["name"] if isinstance(item, dict) else str(item)
+                for item in output_record.ingredients
+            ]
+        else:
+            extracted_ingredients = ["tomato", "onion", "garlic", "capsicum"]
+
         recipe_worker = LLMRecipeWorker()
         recipe_worker.process_recipe_task(
             payload={
                 "request_id": request_obj.id,
-                "ingredients": ["tomato", "onion", "garlic", "capsicum", "carrot", "potato"],
+                "ingredients": extracted_ingredients,
                 "cuisine": cuisine,
                 "is_vegetarian": is_vegetarian,
             },
             db=self.db,
         )
 
-        return RequestResponse.model_validate(request_obj)
+        # Invalidate Redis details cache and return full details with presigned image URLs
+        get_redis_cache().delete(f"request:details:{request_obj.id}")
+        detail_response = self.get_request_details(request_obj.id)
+        if detail_response is not None:
+            return detail_response
+
+        return RequestDetailResponse.model_validate(request_obj)
 
     def get_request_details(self, request_id: int) -> RequestDetailResponse | None:
         """Fetch request details with Redis caching and presigned URL resolution."""
