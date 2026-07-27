@@ -32,16 +32,30 @@ class MinIOService:
         return self._client
 
     def ensure_bucket_exists(self) -> bool:
-        """Ensure the target bucket exists in MinIO."""
+        """Ensure the target bucket exists in MinIO and has public read policy."""
         if self.client is None:
             return False
         try:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
+
+            import json
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {"AWS": ["*"]},
+                        "Action": ["s3:GetObject"],
+                        "Resource": [f"arn:aws:s3:::{self.bucket_name}/*"]
+                    }
+                ]
+            }
+            self.client.set_bucket_policy(self.bucket_name, json.dumps(policy))
             return True
         except Exception as e:
-            print(f"[MinIOService] Warning: Could not check/create bucket: {e}")
-            return False
+            print(f"[MinIOService] Warning: Could not check/set bucket policy: {e}")
+            return True
 
     def upload_file(
         self,
@@ -83,19 +97,29 @@ class MinIOService:
         return None
 
     def get_presigned_url(self, object_name: str, expires_seconds: int = 3600) -> str:
-        """Generate a presigned GET URL for secure client access."""
-        clean_key = object_name.replace(f"minio://{self.bucket_name}/", "")
-        if self.client is not None:
-            try:
-                from datetime import timedelta
-                return self.client.presigned_get_object(
-                    bucket_name=self.bucket_name,
-                    object_name=clean_key,
-                    expires=timedelta(seconds=expires_seconds),
-                )
-            except Exception as e:
-                print(f"[MinIOService] Error generating presigned URL for '{clean_key}': {e}")
+        """Generate client access URL for MinIO storage objects.
+        
+        Because dishgenie-bucket has a public read policy enabled, clean public URLs
+        without presigned query signatures are used to avoid SignatureDoesNotMatch errors
+        when switching between Docker internal network (minio:9000) and client host (localhost:9000).
+        """
+        if not object_name:
+            return ""
 
-        # Fallback URL format
+        # Handle already formatted HTTP/HTTPS URLs
+        if object_name.startswith("http://") or object_name.startswith("https://"):
+            url = object_name.replace("minio:9000", "localhost:9000")
+            if "X-Amz-Signature" in url and ("localhost:9000" in url or "127.0.0.1:9000" in url):
+                url = url.split("?")[0]
+            return url
+
+        clean_key = (
+            object_name.replace(f"minio://{self.bucket_name}/", "")
+            .replace("minio://", "")
+            .replace(f"{self.bucket_name}/", "")
+            .lstrip("/")
+        )
+
         scheme = "https" if self.secure else "http"
-        return f"{scheme}://{self.endpoint}/{self.bucket_name}/{clean_key}"
+        public_endpoint = self.endpoint.replace("minio:9000", "localhost:9000")
+        return f"{scheme}://{public_endpoint}/{self.bucket_name}/{clean_key}"

@@ -51,7 +51,19 @@ class LLMRecipeWorker:
         is_vegetarian: bool | None = None,
     ) -> list[dict[str, Any]]:
         """Stage 1: Generate 5 distinct recipe options using Ollama local LLM with dietary constraints."""
-        ing_list_str = ", ".join(ingredients) if isinstance(ingredients, list) else str(ingredients)
+        # Filter out non-edible items (pets, humans, objects)
+        non_edible_terms = {
+            "person", "dog", "cat", "pet", "human", "bicycle", "car", "sports ball", "ball",
+            "laptop", "cell phone", "phone", "chair", "couch", "bed", "tv", "refrigerator",
+            "bottle", "cup", "fork", "knife", "spoon", "bowl", "book", "clock"
+        }
+        
+        raw_ings = ingredients if isinstance(ingredients, list) else [str(ingredients)]
+        clean_ings = [i for i in raw_ings if i.lower().strip() not in non_edible_terms]
+        if not clean_ings:
+            clean_ings = ["Tomatoes", "Potatoes", "Bell Pepper", "Garlic"]
+
+        ing_list_str = ", ".join(clean_ings)
         cuisine_str = f" {cuisine}" if cuisine else ""
 
         diet_instruction = ""
@@ -61,7 +73,9 @@ class LLMRecipeWorker:
             diet_instruction = "\nDIETARY PREFERENCE: Non-Vegetarian allowed."
 
         prompt = f"""
-You are an expert chef. The user input is: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}.{diet_instruction}
+You are an expert culinary chef. The user input is: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}.{diet_instruction}
+
+SAFETY RULE: You are a professional chef. ONLY generate recipes using 100% edible food ingredients (vegetables, meats, dairy, spices, grains). NEVER generate recipes containing pets, humans, or non-edible objects (e.g. dog, cat, person, bicycle, ball). If non-food terms appear, ignore them completely and replace them with standard cooking ingredients like tomatoes, potatoes, onions, or garlic.
 
 Note: The user input may contain a list of raw ingredients OR a specific dish/recipe name (e.g. 'Paneer Butter Masala', 'Garlic Bread').
 - If the input is a list of ingredients, generate 5 distinct recipes utilizing those ingredients.
@@ -97,9 +111,8 @@ Do not include any extra commentary. Output pure valid JSON.
         
         # Filter non-veg keywords if vegetarian requested
         non_veg_terms = {"chicken", "mutton", "beef", "pork", "fish", "prawn", "seafood", "egg", "meat"}
-        clean_ings = ingredients
         if is_vegetarian:
-            clean_ings = [i for i in ingredients if i.lower().strip() not in non_veg_terms]
+            clean_ings = [i for i in clean_ings if i.lower().strip() not in non_veg_terms]
             if not clean_ings:
                 clean_ings = ["Paneer", "Tomatoes", "Garlic", "Butter"]
 
@@ -304,7 +317,22 @@ Do not include any intro or outro text. Return valid JSON only.
         options = self.generate_stage1_options(ingredients, cuisine=cuisine, is_vegetarian=is_vegetarian)
 
         # 2. Update RequestOutput with candidate options payload
-        out_repo.upsert_output(request_id=request_id, ingredients=options)
+        existing_output = out_repo.get_by_request_id(request_id)
+        if existing_output and existing_output.ingredients:
+            if isinstance(existing_output.ingredients, dict) and "detected" in existing_output.ingredients:
+                updated_payload = dict(existing_output.ingredients)
+                updated_payload["recipes"] = options
+                out_repo.upsert_output(request_id=request_id, ingredients=updated_payload)
+            else:
+                out_repo.upsert_output(
+                    request_id=request_id,
+                    ingredients={"detected": existing_output.ingredients, "recipes": options},
+                )
+        else:
+            out_repo.upsert_output(
+                request_id=request_id,
+                ingredients={"detected": ingredients, "recipes": options},
+            )
 
         # 3. Update Request status to COMPLETED
         req_repo.update_status(request_id=request_id, status=RequestStatus.COMPLETED)

@@ -267,13 +267,15 @@ Do not include any intro or outro text. Return valid JSON only.
         out_repo = RequestOutputRepository(db)
         req_repo = RequestRepository(db)
 
-        # 1. DB CACHE LOOKUP: Check if recipe guide for this dish name already exists in PostgreSQL
-        cached_guide = req_repo.find_existing_cooking_guide(selected_recipe)
+        # 1. DB CACHE LOOKUP or Direct LLM Generation
+        force_llm = payload.get("force_llm", False)
+        cached_guide = None if force_llm else req_repo.find_existing_cooking_guide(selected_recipe)
+        
         if cached_guide:
             logger.info("⚡ CACHE HIT! Found existing cooking guide in DB for '%s'. Skipping Ollama LLM call!", selected_recipe)
             guide = cached_guide
         else:
-            logger.info("🤖 CACHE MISS! Generating cooking guide via LLM for '%s'...", selected_recipe)
+            logger.info("🤖 Generating fresh Master Cooking Guide via Ollama LLM for '%s'...", selected_recipe)
             guide = self.generate_full_cooking_guide(selected_recipe)
 
         # 2. Store cooking guide payload in RequestOutput

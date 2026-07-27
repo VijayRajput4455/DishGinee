@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -247,3 +247,39 @@ def rate_recipe(
         message=f"Rating of {payload.rating} stars saved successfully to PostgreSQL database!",
         data=result,
     )
+
+
+@router.get(
+    "/image-proxy",
+    summary="Proxy Image from MinIO Storage",
+    description="Stream image directly from MinIO object storage using object key as a fallback endpoint.",
+)
+def proxy_image(
+    key: str,
+):
+    from app.services.minio_service import MinIOService
+
+    minio_service = MinIOService()
+    clean_key = (
+        key.replace(f"minio://{minio_service.bucket_name}/", "")
+        .replace("minio://", "")
+        .replace(f"{minio_service.bucket_name}/", "")
+        .lstrip("/")
+    )
+
+    image_bytes = minio_service.download_file(clean_key)
+    if not image_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Image object '{clean_key}' not found in storage.",
+        )
+
+    content_type = "image/jpeg"
+    lower_key = clean_key.lower()
+    if lower_key.endswith(".png"):
+        content_type = "image/png"
+    elif lower_key.endswith(".webp"):
+        content_type = "image/webp"
+
+    return Response(content=image_bytes, media_type=content_type)
+

@@ -142,9 +142,8 @@ class RequestService:
             payload={"request_id": request_obj.id, "image_url": image_storage_url, "cuisine": cuisine, "is_vegetarian": is_vegetarian},
         )
 
-        # Synchronous YOLO & LLM processing for direct UI response (lazy import to prevent circular dependency)
+        # Synchronous YOLO computer vision processing for direct UI response
         from app.workers.image_worker import YOLOImageWorker
-        from app.workers.recipe_worker import LLMRecipeWorker
 
         image_worker = YOLOImageWorker()
         image_worker.process_image_task(
@@ -152,25 +151,8 @@ class RequestService:
             db=self.db,
         )
 
-        output_record = self.out_repo.get_by_request_id(request_obj.id)
-        if output_record and output_record.ingredients:
-            extracted_ingredients = [
-                item["name"] if isinstance(item, dict) else str(item)
-                for item in output_record.ingredients
-            ]
-        else:
-            extracted_ingredients = ["tomato", "onion", "garlic", "capsicum"]
-
-        recipe_worker = LLMRecipeWorker()
-        recipe_worker.process_recipe_task(
-            payload={
-                "request_id": request_obj.id,
-                "ingredients": extracted_ingredients,
-                "cuisine": cuisine,
-                "is_vegetarian": is_vegetarian,
-            },
-            db=self.db,
-        )
+        # Expire session cache so eagerly loaded relationships (output, images) are re-queried from DB
+        self.db.expire_all()
 
         # Invalidate Redis details cache and return full details with presigned image URLs
         get_redis_cache().delete(f"request:details:{request_obj.id}")
@@ -178,7 +160,13 @@ class RequestService:
         if detail_response is not None:
             return detail_response
 
-        return RequestDetailResponse.model_validate(request_obj)
+        response = RequestDetailResponse.model_validate(request_obj)
+        for img in response.images:
+            if img.original_image:
+                img.original_image = self.minio_service.get_presigned_url(img.original_image)
+            if img.annotated_image:
+                img.annotated_image = self.minio_service.get_presigned_url(img.annotated_image)
+        return response
 
     def get_request_details(self, request_id: int) -> RequestDetailResponse | None:
         """Fetch request details with Redis caching and presigned URL resolution."""
@@ -212,52 +200,40 @@ class RequestService:
         return response
 
     def select_recipe(self, request_id: int, recipe_title: str) -> RequestOutputResponse:
-        """Select a recipe option and trigger Stage 2 Cooking Guide, using DB cache if recipe already exists."""
-        # Invalidate details cache for this request
-        get_redis_cache().delete(f"request:details:{request_id}")
-
+        """Select a Stage 1 candidate recipe and invoke Ollama LLM to generate Stage 2 master cooking guide."""
         selected_payload = {"title": recipe_title}
 
-        # 1. DB CACHE LOOKUP: Check if recipe guide for this dish name already exists in PostgreSQL
-        cached_guide = self.req_repo.find_existing_cooking_guide(recipe_title)
-        if cached_guide:
-            logger.info("⚡ CACHE HIT! Found existing cooking guide in DB for '%s'. Skipping Ollama LLM call!", recipe_title)
-            output_obj = self.req_repo.upsert_request_output(
-                request_id=request_id,
-                selected_recipe=selected_payload,
-                cooking_guide=cached_guide,
-            )
-            self.req_repo.update_status(request_id, RequestStatus.COMPLETED)
-            return RequestOutputResponse.model_validate(output_obj)
-
-        # 2. CACHE MISS: Update output with selected recipe choice and trigger LLM generation
-        logger.info("🤖 CACHE MISS! No existing guide in DB for '%s'. Invoking Ollama LLM...", recipe_title)
+        logger.info("🤖 Invoking Ollama LLM model to generate Master Cooking Guide for '%s'...", recipe_title)
         output_obj = self.out_repo.upsert_output(
             request_id=request_id,
             selected_recipe=selected_payload,
         )
 
-        # Publish Stage 2 cooking guide generation task
+        # Publish Stage 2 cooking guide generation task to RabbitMQ
         self.rabbitmq_service.publish_task(
             task_type="cooking_guide.generation",
             payload={"request_id": request_id, "selected_recipe": recipe_title},
         )
 
-        # Synchronous execution of Stage 2 CookingGuideWorker for immediate UI response (lazy import)
+        # Synchronous execution of Stage 2 CookingGuideWorker to generate master guide via Ollama
         from app.workers.cooking_guide_worker import CookingGuideWorker
         guide_worker = CookingGuideWorker()
         guide_worker.process_cooking_guide_task(
             payload={
                 "request_id": request_id,
                 "selected_recipe": recipe_title,
+                "force_llm": True,
             },
             db=self.db,
         )
 
+        # Expire session cache and Redis cache so cooking_guide is re-queried fresh from DB
+        self.db.expire_all()
+        get_redis_cache().delete(f"request:details:{request_id}")
+
         # Re-fetch updated output record
         updated_output = self.out_repo.get_by_request_id(request_id)
         return RequestOutputResponse.model_validate(updated_output or output_obj)
-
 
     def get_stats(self) -> dict[str, int]:
         """Fetch live PostgreSQL database statistics metrics."""

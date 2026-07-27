@@ -3438,6 +3438,44 @@
       }
     }
 
+    function renderStage1LoaderMarkup(title, subtitle, icon = '👨‍🍳') {
+      return `
+        <div class="chef-thinking-container stage2-cooking-loader">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">${icon}</div>
+              <div class="thought-bubbles">
+                <span class="bubble b1">🍲</span>
+                <span class="bubble b2">🧂</span>
+                <span class="bubble b3">🧄</span>
+                <span class="bubble b4">🍳</span>
+                <span class="bubble b5">✨</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="thinking-title">${title} ✦</h3>
+          <p class="thinking-subtitle" id="stage1-live-ticker">
+            ${subtitle}
+          </p>
+
+          <div class="thinking-progress-bar">
+            <div class="thinking-progress-fill" style="background: linear-gradient(90deg, #10B981 0%, #FFB800 50%, #FF6B00 100%);"></div>
+          </div>
+
+          <div class="loading-step-badges">
+            <div class="loading-badge active" id="s1badge-1"><span>🔍</span> Scan</div>
+            <div class="loading-badge" id="s1badge-2"><span>🌶️</span> Ingredients</div>
+            <div class="loading-badge" id="s1badge-3"><span>🤖</span> Ollama LLM</div>
+            <div class="loading-badge" id="s1badge-4"><span>✨</span> 5 Candidates</div>
+          </div>
+        </div>
+      `;
+    }
+
     async function generateRecipesTextStudio() {
       const ingredientsText = document.getElementById('ingredients-text').value.trim();
       const resultsWrapper = document.getElementById('text-results-wrapper');
@@ -3446,23 +3484,11 @@
       resultsWrapper.style.display = 'block';
       resultsWrapper.scrollIntoView({ behavior: 'smooth' });
 
-      cardsContainer.innerHTML = `
-        <div class="chef-thinking-container">
-          <div class="cooking-pot-animation">
-            <span class="flame-particle f1">🔥</span>
-            <span class="flame-particle f2">🔥</span>
-            <span class="flame-particle f3">✨</span>
-            <div class="chef-character-box">
-              <div class="chef-icon-animated">👨‍🍳</div>
-            </div>
-          </div>
-          <h3 class="thinking-title">Chef Genie is thinking about your ingredients... ✦</h3>
-          <p class="thinking-subtitle" id="stage1-live-ticker">
-            Analyzing ingredients & crafting 5 recipe candidates via Ollama LLM...
-          </p>
-          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
-        </div>
-      `;
+      cardsContainer.innerHTML = renderStage1LoaderMarkup(
+        'Chef Genie is analyzing your ingredients...',
+        'Analyzing ingredients & crafting 5 recipe candidates via Ollama LLM...',
+        '👨‍🍳'
+      );
 
       startStage1Ticker();
 
@@ -3500,25 +3526,17 @@
       resultsWrapper.style.display = 'block';
       resultsWrapper.scrollIntoView({ behavior: 'smooth' });
 
-      cardsContainer.innerHTML = `
-        <div class="chef-thinking-container">
-          <div class="cooking-pot-animation">
-            <span class="flame-particle f1">🔥</span>
-            <span class="flame-particle f2">🔥</span>
-            <span class="flame-particle f3">✨</span>
-            <div class="chef-character-box">
-              <div class="chef-icon-animated">👁️</div>
-            </div>
-          </div>
-          <h3 class="thinking-title">Chef Genie is running YOLO Object Detection on your image... ✦</h3>
-          <p class="thinking-subtitle" id="stage1-live-ticker">
-            Extracting food bounding boxes & generating recipes via Ollama...
-          </p>
-          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
-        </div>
-      `;
+      cardsContainer.innerHTML = renderStage1LoaderMarkup(
+        'Running YOLO Object Detection on your photo...',
+        'Detecting food bounding boxes & extracting ingredients via YOLO model...',
+        '👁️'
+      );
 
-      startStage1Ticker();
+      let localBlobUrl = null;
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        try { localBlobUrl = URL.createObjectURL(fileInput.files[0]); } catch(e) {}
+      }
+      window.lastUploadedBlobUrl = localBlobUrl;
 
       try {
         const formData = new FormData();
@@ -3538,22 +3556,238 @@
 
           if (json.data.images && json.data.images.length > 0) imageRecord = json.data.images[0];
           if (json.data.output) {
-            if (json.data.output.ingredients) rawIngredients = json.data.output.ingredients;
+            if (json.data.output.ingredients) {
+              if (Array.isArray(json.data.output.ingredients)) {
+                rawIngredients = json.data.output.ingredients;
+              } else if (typeof json.data.output.ingredients === 'object') {
+                if (json.data.output.ingredients.detected) rawIngredients = json.data.output.ingredients.detected;
+                if (json.data.output.ingredients.recipes && !dbRecipes) dbRecipes = json.data.output.ingredients.recipes;
+              }
+            }
             if (json.data.output.recipes && Array.isArray(json.data.output.recipes)) dbRecipes = json.data.output.recipes;
           }
 
-          if (dbRecipes && dbRecipes.length > 0) {
-            if (stage1TickerInterval) clearInterval(stage1TickerInterval);
-            renderStage1Cards(json.data.id, dbRecipes, imageRecord, rawIngredients, 'image-recipe-cards-container');
-          } else {
-            pollForStage1Custom(json.data.id, 'image-recipe-cards-container');
-          }
+          window.lastYOLOResults = {
+            reqId: json.data.id,
+            recipes: dbRecipes,
+            imageRecord: imageRecord,
+            rawIngredients: rawIngredients
+          };
+
+          renderYOLODetectionHeaderOnly(json.data.id, imageRecord, rawIngredients, 'image-recipe-cards-container');
         } else {
-          pollForStage1Custom(Date.now(), 'image-recipe-cards-container');
+          renderYOLODetectionHeaderOnly(Date.now(), null, null, 'image-recipe-cards-container');
         }
       } catch (err) {
-        pollForStage1Custom(Date.now(), 'image-recipe-cards-container');
+        console.error('Image Studio request error:', err);
+        renderYOLODetectionHeaderOnly(Date.now(), null, null, 'image-recipe-cards-container');
       }
+    }
+
+    function parseIngredientItem(ing) {
+      if (!ing) return null;
+      let itemObj = ing;
+      if (typeof ing === 'string') {
+        const trimmed = ing.trim();
+        if (trimmed.startsWith('{')) {
+          try { itemObj = JSON.parse(trimmed); } catch(e) { itemObj = trimmed; }
+        } else {
+          return { name: trimmed, conf: '' };
+        }
+      }
+      if (typeof itemObj === 'object' && itemObj !== null) {
+        // If object is a recipe candidate (has title/description), IGNORE IT as an ingredient pill!
+        if (itemObj.title && (itemObj.matched_ingredients || itemObj.description || itemObj.prep_time)) {
+          return null;
+        }
+        const name = itemObj.name || itemObj.ingredient || itemObj.label || itemObj.class_name || itemObj.item;
+        if (!name) return null;
+        const conf = itemObj.confidence ? ` (${Math.round(itemObj.confidence * 100)}%)` : '';
+        return { name: String(name), conf };
+      }
+      return { name: String(ing), conf: '' };
+    }
+
+    function formatImageUrl(url) {
+      if (!url) return null;
+      let cleanUrl = String(url).trim();
+
+      // Remap docker internal hostname to localhost for browser access
+      if (cleanUrl.includes('minio:9000')) {
+        cleanUrl = cleanUrl.replace('minio:9000', 'localhost:9000');
+      }
+
+      // If presigned URL has X-Amz-Signature and host was remapped to localhost, strip signature query params
+      // so MinIO's public bucket policy serves the object directly without signature mismatch errors.
+      if (cleanUrl.includes('X-Amz-Signature') && (cleanUrl.includes('localhost:9000') || cleanUrl.includes('127.0.0.1:9000'))) {
+        cleanUrl = cleanUrl.split('?')[0];
+      }
+
+      if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('blob:')) {
+        return cleanUrl;
+      }
+
+      const cleanKey = cleanUrl.replace(/minio:\/\/[^\/]+\//, '').replace('minio://', '');
+      return `${backendUrl}/requests/image-proxy?key=${encodeURIComponent(cleanKey)}`;
+    }
+
+    function renderYOLODetectionHeaderOnly(reqId, imageRecord, rawIngredients, targetContainerId = 'image-recipe-cards-container') {
+      const cardsContainer = document.getElementById(targetContainerId);
+      if (!cardsContainer) return;
+      cardsContainer.innerHTML = '';
+
+      let rawList = (rawIngredients && Array.isArray(rawIngredients)) ? rawIngredients : [];
+      let parsed = rawList.map(parseIngredientItem).filter(i => i !== null && i.name);
+      window.currentYOLOIngredients = parsed;
+
+      window.removeYOLOIngredient = function(index) {
+        if (!window.currentYOLOIngredients) return;
+        window.currentYOLOIngredients.splice(index, 1);
+        updateYOLOIngredientPillsUI();
+      };
+
+      window.addYOLOIngredientFromInput = function() {
+        const input = document.getElementById('new-yolo-ing-input');
+        if (!input || !input.value.trim()) return;
+        const val = input.value.trim();
+        window.currentYOLOIngredients.push({ name: val, conf: '' });
+        input.value = '';
+        updateYOLOIngredientPillsUI();
+      };
+
+      window.updateYOLOIngredientPillsUI = function() {
+        const container = document.getElementById('yolo-ingredient-pills-box');
+        const countEl = document.getElementById('yolo-ingredient-count');
+        const textarea = document.getElementById('ingredients-text');
+        
+        if (!window.currentYOLOIngredients) return;
+        
+        if (countEl) countEl.innerText = window.currentYOLOIngredients.length;
+        if (textarea) textarea.value = window.currentYOLOIngredients.map(p => p.name).join(', ');
+
+        if (container) {
+          if (window.currentYOLOIngredients.length === 0) {
+            container.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">No ingredients selected. Type below to add items!</span>';
+          } else {
+            container.innerHTML = window.currentYOLOIngredients.map((item, idx) => `
+              <span style="padding:0.4rem 0.75rem; border-radius:10px; background:linear-gradient(135deg, rgba(255,107,0,0.22) 0%, rgba(255,184,0,0.12) 100%); border:1px solid var(--border-accent); color:#FFFFFF; font-size:0.82rem; font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 10px rgba(255,107,0,0.15);">
+                <span>🌿</span> <span>${item.name}${item.conf}</span>
+                <button style="background:none; border:none; color:rgba(255,255,255,0.7); cursor:pointer; font-size:0.75rem; padding:0; margin-left:0.2rem; font-weight:900;" onclick="removeYOLOIngredient(${idx})" title="Remove ${item.name}">❌</button>
+              </span>
+            `).join('');
+          }
+        }
+      };
+
+      const textarea = document.getElementById('ingredients-text');
+      if (textarea) textarea.value = window.currentYOLOIngredients.map(p => p.name).join(', ');
+
+      const rawUrl = (imageRecord && (imageRecord.annotated_image || imageRecord.original_image)) 
+        ? (imageRecord.annotated_image || imageRecord.original_image) 
+        : null;
+      const displayImgUrl = formatImageUrl(rawUrl) || window.lastUploadedBlobUrl;
+
+      const yoloHeader = document.createElement('div');
+      yoloHeader.className = 'glass-card';
+      yoloHeader.style.cssText = 'grid-column: 1 / -1; margin-bottom: 1.5rem; border: 1.5px solid var(--border-accent); background: linear-gradient(135deg, rgba(255,107,0,0.12) 0%, rgba(14,19,31,0.95) 100%); padding: 1.35rem;';
+      
+      yoloHeader.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.15rem;">
+          <div>
+            <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); background:rgba(255,107,0,0.15); padding:0.28rem 0.72rem; border-radius:8px; border:1px solid var(--border-accent);">
+              👁️ YOLO Computer Vision Detection Active
+            </span>
+            <h3 style="font-family:var(--font-heading); font-size:1.35rem; font-weight:800; color:#FFFFFF; margin-top:0.4rem;">
+              Extracted Food & Refrigerator Ingredients Scan
+            </h3>
+          </div>
+          <span style="font-size:0.78rem; color:var(--text-muted); font-weight:800; background:rgba(0,0,0,0.4); padding:0.3rem 0.7rem; border-radius:8px;">
+            Request #${reqId}
+          </span>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1.35rem; align-items:center;">
+          ${displayImgUrl ? `
+            <div style="position:relative; border-radius:14px; overflow:hidden; border:1.5px solid var(--border-accent); background:#000; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor:pointer;" onclick="window.open('${displayImgUrl}', '_blank')">
+              <img src="${displayImgUrl}" style="width:100%; height:220px; object-fit:cover; display:block;" alt="YOLO Detection Image Preview">
+              <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.85); padding:0.25rem 0.6rem; border-radius:6px; font-size:0.7rem; color:#10B981; font-weight:800; border:1px solid rgba(16,185,129,0.4);">
+                🔍 Click to View Full Image
+              </div>
+            </div>
+          ` : ''}
+
+          <div>
+            <div style="font-size:0.88rem; font-weight:800; color:var(--accent-gold); margin-bottom:0.75rem;">
+              🥗 Predicted Ingredients (<span id="yolo-ingredient-count">${window.currentYOLOIngredients.length}</span> Items Found - Click ❌ to delete):
+            </div>
+            
+            <!-- INTERACTIVE INGREDIENT PILLS CONTAINER -->
+            <div id="yolo-ingredient-pills-box" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+              ${window.currentYOLOIngredients.map((item, idx) => `
+                <span style="padding:0.4rem 0.75rem; border-radius:10px; background:linear-gradient(135deg, rgba(255,107,0,0.22) 0%, rgba(255,184,0,0.12) 100%); border:1px solid var(--border-accent); color:#FFFFFF; font-size:0.82rem; font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 10px rgba(255,107,0,0.15);">
+                  <span>🌿</span> <span>${item.name}${item.conf}</span>
+                  <button style="background:none; border:none; color:rgba(255,255,255,0.7); cursor:pointer; font-size:0.75rem; padding:0; margin-left:0.2rem; font-weight:900;" onclick="removeYOLOIngredient(${idx})" title="Remove ${item.name}">❌</button>
+                </span>
+              `).join('')}
+            </div>
+
+            <!-- ADD INGREDIENT INPUT BOX -->
+            <div style="display:flex; gap:0.5rem; margin-bottom:1.15rem;">
+              <input type="text" id="new-yolo-ing-input" placeholder="Add extra ingredient (e.g. Garlic, Cheese)..." style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-accent); border-radius:8px; padding:0.45rem 0.75rem; color:#FFF; font-size:0.8rem; outline:none;" onkeypress="if(event.key==='Enter') addYOLOIngredientFromInput()">
+              <button style="background:rgba(255,107,0,0.25); border:1px solid var(--border-accent); color:#FFF; font-weight:800; font-size:0.8rem; padding:0.45rem 0.85rem; border-radius:8px; cursor:pointer;" onclick="addYOLOIngredientFromInput()">
+                ➕ Add
+              </button>
+            </div>
+
+            <!-- PROMINENT BUTTON TO GENERATE 5 RECIPES -->
+            <button class="btn-action" style="background:var(--accent-gradient); color:#FFF; font-weight:800; font-size:0.95rem; padding:0.75rem 1.35rem; border-radius:12px; border:none; cursor:pointer; width:100%; box-shadow:0 4px 18px rgba(255,107,0,0.35); transition:all 0.2s ease;" onclick="generate5RecipesFromYOLO('${reqId}')">
+              <span>✦</span> <span>Generate 5 Recipe Candidates via Ollama</span>
+            </button>
+          </div>
+        </div>
+      `;
+      cardsContainer.appendChild(yoloHeader);
+    }
+
+    async function generate5RecipesFromYOLO(reqId) {
+      const cardsContainer = document.getElementById('image-recipe-cards-container');
+      if (!cardsContainer) return;
+
+      const resultsData = window.lastYOLOResults || {};
+      const imageRecord = resultsData.imageRecord || null;
+      const currentList = window.currentYOLOIngredients || [];
+      const dbRecipes = resultsData.recipes || null;
+
+      const ingredientsText = currentList.map(i => i.name).join(', ') || 'tomatoes, potatoes, vegetables';
+
+      cardsContainer.innerHTML = `
+        <div class="chef-thinking-container" style="grid-column:1 / -1;">
+          <div class="cooking-pot-animation">
+            <span class="flame-particle f1">🔥</span>
+            <span class="flame-particle f2">🔥</span>
+            <span class="flame-particle f3">✨</span>
+            <div class="chef-character-box">
+              <div class="chef-icon-animated">👨‍🍳</div>
+            </div>
+          </div>
+          <h3 class="thinking-title">Chef Genie is thinking about your ingredients: ${ingredientsText}... ✦</h3>
+          <p class="thinking-subtitle" id="stage1-live-ticker">
+            Crafting 5 unique recipe candidates via Ollama LLM...
+          </p>
+          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
+        </div>
+      `;
+
+      startStage1Ticker();
+      await new Promise(r => setTimeout(r, 1200));
+
+      if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+
+      const finalRecipes = (dbRecipes && dbRecipes.length > 0) 
+        ? dbRecipes 
+        : generateDynamicFallbackRecipes(ingredientsText, activeCuisine);
+
+      renderStage1Cards(reqId, finalRecipes, imageRecord, currentList, 'image-recipe-cards-container');
     }
 
     async function generateRecipesVoiceStudio() {
@@ -3610,6 +3844,26 @@
       }
     }
 
+    function extractRecipesFromOutput(output) {
+      if (!output) return null;
+      if (output.recipes && Array.isArray(output.recipes) && output.recipes.length > 0) {
+        return output.recipes;
+      }
+      if (output.ingredients) {
+        if (Array.isArray(output.ingredients) && output.ingredients.length > 0) {
+          const first = output.ingredients[0];
+          if (typeof first === 'object' && first !== null && (first.title || first.recipe_title)) {
+            return output.ingredients;
+          }
+        } else if (typeof output.ingredients === 'object') {
+          if (output.ingredients.recipes && Array.isArray(output.ingredients.recipes) && output.ingredients.recipes.length > 0) {
+            return output.ingredients.recipes;
+          }
+        }
+      }
+      return null;
+    }
+
     async function pollForStage1Custom(reqId, targetContainerId = 'text-recipe-cards-container') {
       let attempts = 0;
 
@@ -3626,8 +3880,14 @@
           if (json.success && json.data) {
             if (json.data.images && json.data.images.length > 0) imageRecord = json.data.images[0];
             if (json.data.output) {
-              if (json.data.output.ingredients) rawIngredients = json.data.output.ingredients;
-              if (json.data.output.recipes && Array.isArray(json.data.output.recipes)) dbRecipes = json.data.output.recipes;
+              dbRecipes = extractRecipesFromOutput(json.data.output);
+              if (json.data.output.ingredients) {
+                if (Array.isArray(json.data.output.ingredients)) {
+                  rawIngredients = json.data.output.ingredients;
+                } else if (typeof json.data.output.ingredients === 'object' && json.data.output.ingredients.detected) {
+                  rawIngredients = json.data.output.ingredients.detected;
+                }
+              }
             }
           }
 
@@ -3737,9 +3997,10 @@
         const textarea = document.getElementById('ingredients-text');
         if (textarea) textarea.value = ingredientNames.join(', ');
 
-        const annotatedUrl = (imageRecord && (imageRecord.annotated_image || imageRecord.original_image)) 
+        const rawAnnotatedUrl = (imageRecord && (imageRecord.annotated_image || imageRecord.original_image)) 
           ? (imageRecord.annotated_image || imageRecord.original_image) 
           : null;
+        const annotatedUrl = formatImageUrl(rawAnnotatedUrl);
 
         const yoloHeader = document.createElement('div');
         yoloHeader.className = 'glass-card';
@@ -3814,7 +4075,7 @@
               <span>⏱️ ${prepTime}</span>
               <span>🔥 ${difficulty}</span>
             </div>
-            <button class="btn-action" style="padding:0.6rem; font-size:0.82rem;" onclick="selectRecipeChoice(${reqId}, '${title.replace(/'/g, "\\'")}')">
+            <button class="btn-action" style="padding:0.6rem; font-size:0.82rem;" onclick="selectRecipeChoice(${reqId}, decodeURIComponent('${encodeURIComponent(title)}'), '${targetContainerId.replace('recipe-cards-container', 'guide-wrapper')}').catch(console.error)">
               Select This Recipe ➔
             </button>
           </div>
@@ -3825,8 +4086,19 @@
 
     let stage2TickerInterval = null;
 
-    function renderStage2Loader(title) {
-      const guideWrapper = document.getElementById('guide-wrapper');
+    function getActiveGuideWrapper(targetId = null) {
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) return el;
+      }
+      return document.getElementById('text-guide-wrapper') ||
+             document.getElementById('image-guide-wrapper') ||
+             document.getElementById('voice-guide-wrapper');
+    }
+
+    function renderStage2Loader(title, containerId = 'text-guide-wrapper') {
+      const guideWrapper = getActiveGuideWrapper(containerId);
+      if (!guideWrapper) return;
       guideWrapper.style.display = 'block';
       guideWrapper.innerHTML = `
         <div class="chef-thinking-container stage2-cooking-loader">
@@ -3896,8 +4168,9 @@
       }, 800);
     }
 
-    async function selectRecipeChoice(reqId, title) {
-      renderStage2Loader(title);
+    async function selectRecipeChoice(reqId, title, containerId = 'text-guide-wrapper') {
+      renderStage2Loader(title, containerId);
+      pollForStage2(reqId, title, containerId);
 
       try {
         const res = await fetch(`${backendUrl}/requests/${reqId}/select-recipe`, {
@@ -3906,18 +4179,13 @@
           body: JSON.stringify({ recipe_title: title })
         });
         const json = await res.json();
-        if (json.success) {
-          if (json.data && json.data.cooking_guide) {
-            if (stage2TickerInterval) clearInterval(stage2TickerInterval);
-            renderStage2Guide(json.data.cooking_guide, reqId);
-          } else {
-            pollForStage2(reqId, title);
-          }
-        } else {
-          pollForStage2(reqId, title);
+        if (json.success && json.data && json.data.cooking_guide) {
+          if (window.stage2PollInterval) clearInterval(window.stage2PollInterval);
+          if (stage2TickerInterval) clearInterval(stage2TickerInterval);
+          renderStage2Guide(json.data.cooking_guide, reqId, containerId);
         }
       } catch (e) {
-        pollForStage2(reqId, title);
+        console.error('Error selecting recipe choice:', e);
       }
     }
 
@@ -3997,10 +4265,11 @@
       };
     }
 
-    async function pollForStage2(reqId, title) {
+    async function pollForStage2(reqId, title, containerId = 'text-guide-wrapper') {
       let attempts = 0;
+      if (window.stage2PollInterval) clearInterval(window.stage2PollInterval);
 
-      const interval = setInterval(async () => {
+      window.stage2PollInterval = setInterval(async () => {
         attempts++;
         try {
           const res = await fetch(`${backendUrl}/requests/${reqId}`);
@@ -4009,27 +4278,31 @@
           const cookingGuide = json.success && json.data && json.data.output && json.data.output.cooking_guide;
 
           if (cookingGuide && (cookingGuide.steps || cookingGuide.title || cookingGuide.recipe_title)) {
-            clearInterval(interval);
+            clearInterval(window.stage2PollInterval);
+            window.stage2PollInterval = null;
             if (stage2TickerInterval) clearInterval(stage2TickerInterval);
-            renderStage2Guide(cookingGuide, reqId);
-          } else if (attempts >= 15) {
-            clearInterval(interval);
+            renderStage2Guide(cookingGuide, reqId, containerId);
+          } else if (attempts >= 30) {
+            clearInterval(window.stage2PollInterval);
+            window.stage2PollInterval = null;
             if (stage2TickerInterval) clearInterval(stage2TickerInterval);
-            renderStage2Guide(generateDynamicFallbackGuide(title), reqId);
+            renderStage2Guide(generateDynamicFallbackGuide(title), reqId, containerId);
           }
         } catch (e) {
-          if (attempts >= 15) {
-            clearInterval(interval);
+          if (attempts >= 30) {
+            clearInterval(window.stage2PollInterval);
+            window.stage2PollInterval = null;
             if (stage2TickerInterval) clearInterval(stage2TickerInterval);
-            renderStage2Guide(generateDynamicFallbackGuide(title), reqId);
+            renderStage2Guide(generateDynamicFallbackGuide(title), reqId, containerId);
           }
         }
-      }, 1500);
+      }, 1000);
     }
 
-    function renderStage2Guide(guide, reqId, containerId = 'guide-wrapper') {
-      const targetId = containerId || 'guide-wrapper';
-      const guideWrapper = document.getElementById(targetId);
+    function renderStage2Guide(guide, reqId, containerId = 'text-guide-wrapper') {
+      const guideWrapper = getActiveGuideWrapper(containerId);
+      if (!guideWrapper) return;
+      guideWrapper.style.display = 'block';
       if (!guideWrapper) return;
       guideWrapper.style.display = 'block';
       const recipeTitle = guide.recipe_title || guide.title || 'Selected Recipe';

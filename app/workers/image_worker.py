@@ -13,6 +13,12 @@ from app.services.rabbitmq_service import RabbitMQService
 logger = get_logger(__name__)
 
 
+import os
+
+ML_MODELS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "ml_models"))
+WEIGHTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "weights"))
+
+
 class YOLOImageWorker:
     """Worker handling YOLO computer vision model inference on uploaded food images."""
 
@@ -20,6 +26,25 @@ class YOLOImageWorker:
         self.minio_service = MinIOService()
         self.rabbitmq_service = RabbitMQService()
         self._yolo_model: Any = None
+        self._weights_path: str = ""
+
+    @property
+    def weights_path(self) -> str:
+        """Resolve path to local weights file or default model name."""
+        if not self._weights_path:
+            user_model = os.path.join(ML_MODELS_DIR, "yolo26m.pt")
+            food_weights = os.path.join(WEIGHTS_DIR, "yolo_food.pt")
+            default_weights = os.path.join(WEIGHTS_DIR, "yolo26m.pt")
+
+            if os.path.exists(user_model):
+                self._weights_path = user_model
+            elif os.path.exists(food_weights):
+                self._weights_path = food_weights
+            elif os.path.exists(default_weights):
+                self._weights_path = default_weights
+            else:
+                self._weights_path = user_model
+        return self._weights_path
 
     @property
     def model(self) -> Any:
@@ -27,8 +52,9 @@ class YOLOImageWorker:
         if self._yolo_model is None:
             try:
                 from ultralytics import YOLO
-                # Load pre-trained YOLO model (e.g. yolov8n.pt or custom food weights)
-                self._yolo_model = YOLO("yolov8n.pt")
+                target_weights = self.weights_path
+                logger.info("Initializing YOLO model from weights path: %s", target_weights)
+                self._yolo_model = YOLO(target_weights)
             except Exception as e:
                 logger.warning("Could not load ultralytics YOLO model (%s). Using mock engine.", e)
                 self._yolo_model = None
@@ -37,6 +63,19 @@ class YOLOImageWorker:
     def detect_ingredients(self, image_bytes: bytes) -> tuple[list[dict[str, Any]], bytes]:
         """Perform YOLO object detection and render annotated image with bounding boxes."""
         detected_items: list[dict[str, Any]] = []
+
+        # Non-edible / non-food COCO categories to exclude from food ingredients
+        non_food_classes = {
+            "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+            "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
+            "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack",
+            "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball",
+            "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket",
+            "bottle", "wine glass", "cup", "fork", "knife", "spoon", "chair", "couch",
+            "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse", "remote",
+            "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book",
+            "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"
+        }
 
         try:
             from PIL import Image, ImageDraw, ImageFont
@@ -49,11 +88,11 @@ class YOLOImageWorker:
             draw = ImageDraw.Draw(img)
 
             if self.model is not None:
-                results = self.model(img)
+                results = self.model(img, conf=0.15)
                 for r in results:
                     for box in r.boxes:
                         cls_id = int(box.cls[0])
-                        label = self.model.names[cls_id]
+                        label = str(self.model.names[cls_id]).strip()
                         conf = float(box.conf[0])
 
                         # Bounding box coordinates
@@ -64,11 +103,11 @@ class YOLOImageWorker:
                             "confidence": round(conf, 2),
                         })
 
-                        # Draw green bounding box & label text
-                        draw.rectangle([x1, y1, x2, y2], outline="green", width=3)
-                        draw.text((x1 + 5, max(0, y1 - 15)), f"{label} {conf:.2f}", fill="red")
+                        # Draw green bounding box & label text for detected items
+                        draw.rectangle([x1, y1, x2, y2], outline="#00FF00", width=3)
+                        draw.text((x1 + 5, max(0, y1 - 15)), f"{label} {conf:.2f}", fill="#FF0000")
             else:
-                # Mock fallback detection for testing environment
+                # Mock fallback detection for testing environment when YOLO model is uninitialized
                 width, height = img.size
                 draw.rectangle([width * 0.1, height * 0.1, width * 0.5, height * 0.5], outline="green", width=3)
                 draw.text((width * 0.1 + 5, height * 0.1 + 5), "tomato 0.95", fill="red")
