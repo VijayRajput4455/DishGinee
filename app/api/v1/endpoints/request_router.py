@@ -117,6 +117,7 @@ def create_image_request(
 )
 def create_voice_request(
     file: UploadFile,
+    transcription_text: str | None = Form(default=None, description="Optional pre-transcribed text from Web Speech API"),
     cuisine: str | None = Form(default=None, description="Optional cuisine preference (e.g. Indian, Italian, Mexican, Asian)"),
     is_vegetarian: bool | None = Form(default=None, description="Dietary preference constraint (true=Veg, false=Non-Veg, null=Any)"),
     num_recipes: int = Form(default=5, description="Number of recipe candidates requested"),
@@ -133,6 +134,7 @@ def create_voice_request(
     result = service.create_voice_request(
         file_bytes=file_bytes,
         filename=file.filename or "audio.wav",
+        transcription_text=transcription_text,
         cuisine=cuisine,
         is_vegetarian=is_vegetarian,
         num_recipes=num_recipes,

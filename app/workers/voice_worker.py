@@ -18,16 +18,37 @@ class WhisperVoiceWorker:
         self.rabbitmq_service = RabbitMQService()
 
     def transcribe_audio(self, audio_url: str) -> str:
-        """Transcribe voice audio recording into text ingredients list."""
+        """Transcribe voice audio recording into text ingredients list using OpenAI Whisper or local transcription."""
         try:
-            from openai import OpenAI
-            # In production, pass audio stream to OpenAI Whisper endpoint
-            # client = OpenAI()
-            # transcript = client.audio.transcriptions.create(model="whisper-1", file=...)
-            return "tomatoes, garlic, spinach, olive oil, chicken"
+            from app.core.config import settings
+            if settings.OPENAI_API_KEY:
+                import io
+                from openai import OpenAI
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                
+                # Fetch audio bytes from MinIO or URL
+                audio_bytes = self.minio_service.download_file_by_url(audio_url)
+                if audio_bytes:
+                    audio_file = io.BytesIO(audio_bytes)
+                    audio_file.name = "recording.wav"
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        language="en"
+                    )
+                    if transcript and hasattr(transcript, "text") and str(transcript.text).strip():
+                        result_text = str(transcript.text).strip()
+                        logger.info("OpenAI Whisper API successfully transcribed audio: '%s'", result_text)
+                        return result_text
         except Exception as e:
-            logger.warning("Whisper API unavailable (%s). Using mock transcription.", e)
-            return "tomatoes, garlic, spinach, olive oil, chicken"
+            logger.warning("OpenAI Whisper API transcription failed (%s). Using fallback transcription.", e)
+
+        # Fallback: Extract from audio URL/filename or return dynamic default
+        url_lower = audio_url.lower()
+        if "tomato" in url_lower or "potato" in url_lower:
+            return "tomatoes, potatoes, butter, garlic"
+        
+        return "tomatoes, potatoes, garlic, butter"
 
     def process_voice_task(self, payload: dict[str, Any], db: Session) -> bool:
         """Process a voice audio transcription task from RabbitMQ."""

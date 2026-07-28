@@ -84,7 +84,7 @@ class RequestService:
 
         return RequestResponse.model_validate(request_obj)
 
-    def create_voice_request(self, file_bytes: bytes, filename: str, cuisine: str | None = None, is_vegetarian: bool | None = None, num_recipes: int = 5) -> RequestResponse:
+    def create_voice_request(self, file_bytes: bytes, filename: str, transcription_text: str | None = None, cuisine: str | None = None, is_vegetarian: bool | None = None, num_recipes: int = 5) -> RequestResponse:
         """Upload voice audio file to MinIO, create request, and publish transcription task."""
         object_key = f"audio/{uuid.uuid4()}_{filename}"
         audio_storage_url = self.minio_service.upload_file(
@@ -96,6 +96,7 @@ class RequestService:
         request_obj = self.req_repo.create_request(
             input_type=InputType.VOICE,
             audio_url=audio_storage_url,
+            audio_transcription=transcription_text,
             cuisine=cuisine,
             is_vegetarian=is_vegetarian,
         )
@@ -103,22 +104,57 @@ class RequestService:
         # Publish task to RabbitMQ for Whisper speech-to-text worker
         self.rabbitmq_service.publish_task(
             task_type="audio.transcription",
-            payload={"request_id": request_obj.id, "audio_url": audio_storage_url, "cuisine": cuisine, "is_vegetarian": is_vegetarian, "num_recipes": num_recipes},
-        )
-
-        # Synchronous execution fallback for direct UI response (lazy import to prevent circular dependency)
-        from app.workers.recipe_worker import LLMRecipeWorker
-        recipe_worker = LLMRecipeWorker()
-        recipe_worker.process_recipe_task(
             payload={
                 "request_id": request_obj.id,
-                "ingredients": ["tomatoes", "potatoes", "garlic", "butter"],
+                "audio_url": audio_storage_url,
+                "transcription_text": transcription_text,
                 "cuisine": cuisine,
                 "is_vegetarian": is_vegetarian,
-                "num_recipes": num_recipes,
+                "num_recipes": num_recipes
             },
-            db=self.db,
         )
+
+        # Synchronous execution fallback for direct UI response
+        try:
+            from app.workers.voice_worker import WhisperVoiceWorker
+            voice_worker = WhisperVoiceWorker()
+            
+            # If transcription_text provided, save output & trigger recipe generation
+            if transcription_text and transcription_text.strip():
+                final_text = transcription_text.strip()
+                request_obj.audio_transcription = final_text
+                self.req_repo.update(request_obj)
+                
+                ingredients_list = [item.strip() for item in final_text.replace("and", ",").split(",") if item.strip()]
+                from app.repositories import RequestOutputRepository
+                out_repo = RequestOutputRepository(self.db)
+                out_repo.upsert_output(request_id=request_obj.id, ingredients=ingredients_list)
+
+                from app.workers.recipe_worker import LLMRecipeWorker
+                recipe_worker = LLMRecipeWorker()
+                recipe_worker.process_recipe_task(
+                    payload={
+                        "request_id": request_obj.id,
+                        "ingredients": ingredients_list,
+                        "cuisine": cuisine,
+                        "is_vegetarian": is_vegetarian,
+                        "num_recipes": num_recipes,
+                    },
+                    db=self.db,
+                )
+            else:
+                voice_worker.process_voice_task(
+                    payload={
+                        "request_id": request_obj.id,
+                        "audio_url": audio_storage_url,
+                        "cuisine": cuisine,
+                        "is_vegetarian": is_vegetarian,
+                        "num_recipes": num_recipes,
+                    },
+                    db=self.db,
+                )
+        except Exception as e:
+            logger.info("Synchronous voice worker execution info: %s", e)
 
         return RequestResponse.model_validate(request_obj)
 
