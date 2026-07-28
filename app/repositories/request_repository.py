@@ -31,6 +31,7 @@ class RequestRepository(BaseRepository[Request]):
         input_type: InputType,
         raw_text_input: str | None = None,
         audio_url: str | None = None,
+        audio_transcription: str | None = None,
         cuisine: str | None = None,
         is_vegetarian: bool | None = None,
     ) -> Request:
@@ -40,6 +41,7 @@ class RequestRepository(BaseRepository[Request]):
             status=RequestStatus.PENDING,
             raw_text_input=raw_text_input,
             audio_url=audio_url,
+            audio_transcription=audio_transcription,
             cuisine=cuisine,
             is_vegetarian=is_vegetarian,
         )
