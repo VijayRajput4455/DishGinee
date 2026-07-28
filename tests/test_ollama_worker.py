@@ -57,7 +57,8 @@ def run_ollama_test():
         # 3. Retrieve generated output from DB
         output = req_repo.get_with_details(req_obj.id).output
         assert output is not None
-        recipes = output.ingredients  # Stores list of 5 candidate recipes
+        raw_ing = output.ingredients
+        recipes = raw_ing.get("recipes", []) if isinstance(raw_ing, dict) else (raw_ing or [])
         assert len(recipes) == 5, f"Expected 5 recipes, got {len(recipes)}"
 
         print(f"\n🎉 Successfully Generated {len(recipes)} Distinct Recipes (Cuisine: {cuisine}):")

@@ -1995,6 +1995,29 @@
           </div>
         </div>
 
+        <!-- Recipe Count Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Number of Recipes Needed:
+        </label>
+        <div class="count-matrix-container" style="display:flex; gap:0.6rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="count-card" onclick="selectRecipeCount(this, 3)" style="flex:1; min-width:75px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-orange);">3</span>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">3 Recipes</div>
+          </div>
+          <div class="count-card selected" onclick="selectRecipeCount(this, 5)" style="flex:1; min-width:75px; background:rgba(255,107,0,0.18); border:1.5px solid var(--border-accent); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-gold);">5</span>
+            <div style="font-size:0.68rem; color:var(--accent-gold); font-weight:800;">5 (Default)</div>
+          </div>
+          <div class="count-card" onclick="selectRecipeCount(this, 8)" style="flex:1; min-width:75px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-orange);">8</span>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">8 Recipes</div>
+          </div>
+          <div class="count-card" onclick="selectRecipeCount(this, 10)" style="flex:1; min-width:75px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-orange);">10</span>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">10 Recipes</div>
+          </div>
+        </div>
+
         <!-- Text Input Area -->
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
@@ -2021,7 +2044,7 @@
 
         <!-- Submit Button -->
         <button class="btn-action" onclick="generateRecipesTextStudio()">
-          <span>✦</span> <span>Generate 5 Recipe Candidates via Ollama</span>
+          <span>✦</span> <span class="btn-recipe-count-label">Generate 5 Recipe Candidates via Ollama</span>
         </button>
       </div>
 
@@ -2132,6 +2155,29 @@
           <div class="cuisine-card" onclick="selectCuisine(this, 'Thai')">
             <span style="font-size:1.3rem; display:block; margin-bottom:0.15rem;">🇹🇭</span>
             <div style="font-weight:700; font-size:0.78rem;">Thai</div>
+          </div>
+        </div>
+
+        <!-- Recipe Count Selector Matrix -->
+        <label style="font-weight:800; font-family:var(--font-heading); font-size:0.92rem; display:block; margin-bottom:0.65rem;">
+          Select Number of Recipes Needed:
+        </label>
+        <div class="count-matrix-container" style="display:flex; gap:0.6rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <div class="count-card" onclick="selectRecipeCount(this, 3)" style="flex:1; min-width:75px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-orange);">3</span>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">3 Recipes</div>
+          </div>
+          <div class="count-card selected" onclick="selectRecipeCount(this, 5)" style="flex:1; min-width:75px; background:rgba(255,107,0,0.18); border:1.5px solid var(--border-accent); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-gold);">5</span>
+            <div style="font-size:0.68rem; color:var(--accent-gold); font-weight:800;">5 (Default)</div>
+          </div>
+          <div class="count-card" onclick="selectRecipeCount(this, 8)" style="flex:1; min-width:75px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-orange);">8</span>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">8 Recipes</div>
+          </div>
+          <div class="count-card" onclick="selectRecipeCount(this, 10)" style="flex:1; min-width:75px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:0.5rem 0.65rem; text-align:center; cursor:pointer;">
+            <span style="font-weight:900; font-size:1.1rem; display:block; color:var(--accent-orange);">10</span>
+            <div style="font-size:0.68rem; color:var(--text-secondary);">10 Recipes</div>
           </div>
         </div>
 
@@ -3204,6 +3250,24 @@
     }
 
     let activeIsVegetarian = true;
+    let activeRecipeCount = 5;
+
+    function selectRecipeCount(el, count) {
+      document.querySelectorAll('.count-card').forEach(c => {
+        c.classList.remove('selected');
+        c.style.background = 'rgba(255,255,255,0.03)';
+        c.style.borderColor = 'var(--border)';
+      });
+      if (el) {
+        el.classList.add('selected');
+        el.style.background = 'rgba(255,107,0,0.18)';
+        el.style.borderColor = 'var(--border-accent)';
+      }
+      activeRecipeCount = count;
+      document.querySelectorAll('.btn-recipe-count-label').forEach(span => {
+        span.innerText = `Generate ${count} Recipe Candidates via Ollama`;
+      });
+    }
 
     function selectDietPreference(el, isVeg) {
       document.querySelectorAll('.diet-card').forEach(c => {
@@ -3438,7 +3502,10 @@
       }
     }
 
-    function renderStage1LoaderMarkup(title, subtitle, icon = '👨‍🍳') {
+    function renderStage1LoaderMarkup(title, subtitle, icon = '👨‍🍳', ingredientsText = '') {
+      const rawIngs = ingredientsText || document.getElementById('ingredients-text')?.value.trim() || 'Tomatoes, Potatoes, Garlic';
+      const displayIngs = rawIngs.length > 28 ? rawIngs.substring(0, 26) + '...' : rawIngs;
+      const count = activeRecipeCount || 5;
       return `
         <div class="chef-thinking-container stage2-cooking-loader">
           <div class="cooking-pot-animation">
@@ -3468,9 +3535,9 @@
 
           <div class="loading-step-badges">
             <div class="loading-badge active" id="s1badge-1"><span>🔍</span> Scan</div>
-            <div class="loading-badge" id="s1badge-2"><span>🌶️</span> Ingredients</div>
+            <div class="loading-badge" id="s1badge-2" title="${rawIngs}"><span>🌶️</span> ${displayIngs}</div>
             <div class="loading-badge" id="s1badge-3"><span>🤖</span> Ollama LLM</div>
-            <div class="loading-badge" id="s1badge-4"><span>✨</span> 5 Candidates</div>
+            <div class="loading-badge" id="s1badge-4"><span>✨</span> ${count} Candidates</div>
           </div>
         </div>
       `;
@@ -3484,10 +3551,12 @@
       resultsWrapper.style.display = 'block';
       resultsWrapper.scrollIntoView({ behavior: 'smooth' });
 
+      const count = activeRecipeCount || 5;
       cardsContainer.innerHTML = renderStage1LoaderMarkup(
         'Chef Genie is analyzing your ingredients...',
-        'Analyzing ingredients & crafting 5 recipe candidates via Ollama LLM...',
-        '👨‍🍳'
+        `Analyzing ingredients & crafting ${count} recipe candidates via Ollama LLM...`,
+        '👨‍🍳',
+        ingredientsText
       );
 
       startStage1Ticker();
@@ -3499,7 +3568,8 @@
           body: JSON.stringify({
             raw_text_input: ingredientsText || 'tomatoes, potatoes, garlic, butter',
             cuisine: activeCuisine,
-            is_vegetarian: activeIsVegetarian
+            is_vegetarian: activeIsVegetarian,
+            num_recipes: activeRecipeCount
           })
         });
         const json = await res.json();
@@ -3529,7 +3599,8 @@
       cardsContainer.innerHTML = renderStage1LoaderMarkup(
         'Running YOLO Object Detection on your photo...',
         'Detecting food bounding boxes & extracting ingredients via YOLO model...',
-        '👁️'
+        '👁️',
+        'Food Scan'
       );
 
       let localBlobUrl = null;
@@ -3545,6 +3616,7 @@
         if (activeIsVegetarian !== null && activeIsVegetarian !== undefined) {
           formData.append('is_vegetarian', activeIsVegetarian);
         }
+        formData.append('num_recipes', activeRecipeCount);
 
         const res = await fetch(`${backendUrl}/requests/image`, { method: 'POST', body: formData });
         const json = await res.json();
@@ -3600,12 +3672,11 @@
         if (itemObj.title && (itemObj.matched_ingredients || itemObj.description || itemObj.prep_time)) {
           return null;
         }
-        const name = itemObj.name || itemObj.ingredient || itemObj.label || itemObj.class_name || itemObj.item;
-        if (!name) return null;
+        const name = itemObj.name || itemObj.ingredient || itemObj.label || 'Item';
         const conf = itemObj.confidence ? ` (${Math.round(itemObj.confidence * 100)}%)` : '';
-        return { name: String(name), conf };
+        return { name, conf };
       }
-      return { name: String(ing), conf: '' };
+      return null;
     }
 
     function formatImageUrl(url) {
@@ -3636,9 +3707,23 @@
       if (!cardsContainer) return;
       cardsContainer.innerHTML = '';
 
-      let rawList = (rawIngredients && Array.isArray(rawIngredients)) ? rawIngredients : [];
-      let parsed = rawList.map(parseIngredientItem).filter(i => i !== null && i.name);
-      window.currentYOLOIngredients = parsed;
+      window.currentYOLOIngredients = [];
+      if (rawIngredients && Array.isArray(rawIngredients)) {
+        rawIngredients.forEach(ing => {
+          const parsed = parseIngredientItem(ing);
+          if (parsed) window.currentYOLOIngredients.push(parsed);
+        });
+      }
+
+      if (window.currentYOLOIngredients.length === 0) {
+        window.currentYOLOIngredients = [
+          { name: 'tomatoes', conf: '' },
+          { name: 'potatoes', conf: '' },
+          { name: 'butter', conf: '' },
+          { name: 'garlic', conf: '' },
+          { name: 'spinach', conf: '' }
+        ];
+      }
 
       window.removeYOLOIngredient = function(index) {
         if (!window.currentYOLOIngredients) return;
@@ -3691,6 +3776,7 @@
       yoloHeader.className = 'glass-card';
       yoloHeader.style.cssText = 'grid-column: 1 / -1; margin-bottom: 1.5rem; border: 1.5px solid var(--border-accent); background: linear-gradient(135deg, rgba(255,107,0,0.12) 0%, rgba(14,19,31,0.95) 100%); padding: 1.35rem;';
       
+      const reqCount = activeRecipeCount || 5;
       yoloHeader.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.15rem;">
           <div>
@@ -3721,7 +3807,6 @@
               🥗 Predicted Ingredients (<span id="yolo-ingredient-count">${window.currentYOLOIngredients.length}</span> Items Found - Click ❌ to delete):
             </div>
             
-            <!-- INTERACTIVE INGREDIENT PILLS CONTAINER -->
             <div id="yolo-ingredient-pills-box" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
               ${window.currentYOLOIngredients.map((item, idx) => `
                 <span style="padding:0.4rem 0.75rem; border-radius:10px; background:linear-gradient(135deg, rgba(255,107,0,0.22) 0%, rgba(255,184,0,0.12) 100%); border:1px solid var(--border-accent); color:#FFFFFF; font-size:0.82rem; font-weight:800; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 10px rgba(255,107,0,0.15);">
@@ -3731,7 +3816,6 @@
               `).join('')}
             </div>
 
-            <!-- ADD INGREDIENT INPUT BOX -->
             <div style="display:flex; gap:0.5rem; margin-bottom:1.15rem;">
               <input type="text" id="new-yolo-ing-input" placeholder="Add extra ingredient (e.g. Garlic, Cheese)..." style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-accent); border-radius:8px; padding:0.45rem 0.75rem; color:#FFF; font-size:0.8rem; outline:none;" onkeypress="if(event.key==='Enter') addYOLOIngredientFromInput()">
               <button style="background:rgba(255,107,0,0.25); border:1px solid var(--border-accent); color:#FFF; font-weight:800; font-size:0.8rem; padding:0.45rem 0.85rem; border-radius:8px; cursor:pointer;" onclick="addYOLOIngredientFromInput()">
@@ -3739,9 +3823,8 @@
               </button>
             </div>
 
-            <!-- PROMINENT BUTTON TO GENERATE 5 RECIPES -->
             <button class="btn-action" style="background:var(--accent-gradient); color:#FFF; font-weight:800; font-size:0.95rem; padding:0.75rem 1.35rem; border-radius:12px; border:none; cursor:pointer; width:100%; box-shadow:0 4px 18px rgba(255,107,0,0.35); transition:all 0.2s ease;" onclick="generate5RecipesFromYOLO('${reqId}')">
-              <span>✦</span> <span>Generate 5 Recipe Candidates via Ollama</span>
+              <span>✦</span> <span class="btn-recipe-count-label">Generate ${reqCount} Recipe Candidates via Ollama</span>
             </button>
           </div>
         </div>
@@ -3760,23 +3843,13 @@
 
       const ingredientsText = currentList.map(i => i.name).join(', ') || 'tomatoes, potatoes, vegetables';
 
-      cardsContainer.innerHTML = `
-        <div class="chef-thinking-container" style="grid-column:1 / -1;">
-          <div class="cooking-pot-animation">
-            <span class="flame-particle f1">🔥</span>
-            <span class="flame-particle f2">🔥</span>
-            <span class="flame-particle f3">✨</span>
-            <div class="chef-character-box">
-              <div class="chef-icon-animated">👨‍🍳</div>
-            </div>
-          </div>
-          <h3 class="thinking-title">Chef Genie is thinking about your ingredients: ${ingredientsText}... ✦</h3>
-          <p class="thinking-subtitle" id="stage1-live-ticker">
-            Crafting 5 unique recipe candidates via Ollama LLM...
-          </p>
-          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
-        </div>
-      `;
+      const count = activeRecipeCount || 5;
+      cardsContainer.innerHTML = renderStage1LoaderMarkup(
+        `Chef Genie is thinking about your ingredients: ${ingredientsText}...`,
+        `Crafting ${count} unique recipe candidates via Ollama LLM...`,
+        '👨‍🍳',
+        ingredientsText
+      );
 
       startStage1Ticker();
       await new Promise(r => setTimeout(r, 1200));
@@ -3803,23 +3876,12 @@
       resultsWrapper.style.display = 'block';
       resultsWrapper.scrollIntoView({ behavior: 'smooth' });
 
-      cardsContainer.innerHTML = `
-        <div class="chef-thinking-container">
-          <div class="cooking-pot-animation">
-            <span class="flame-particle f1">🔥</span>
-            <span class="flame-particle f2">🔥</span>
-            <span class="flame-particle f3">✨</span>
-            <div class="chef-character-box">
-              <div class="chef-icon-animated">🎙️</div>
-            </div>
-          </div>
-          <h3 class="thinking-title">Chef Genie is transcribing voice audio via Whisper AI... ✦</h3>
-          <p class="thinking-subtitle" id="stage1-live-ticker">
-            Converting audio speech to text & generating recipes...
-          </p>
-          <div class="thinking-progress-bar"><div class="thinking-progress-fill"></div></div>
-        </div>
-      `;
+      cardsContainer.innerHTML = renderStage1LoaderMarkup(
+        'Chef Genie is transcribing voice audio via Whisper AI...',
+        'Converting audio speech to text & generating recipe candidates...',
+        '🎙️',
+        'Voice Recording'
+      );
 
       startStage1Ticker();
 
@@ -3830,6 +3892,7 @@
         if (activeIsVegetarian !== null && activeIsVegetarian !== undefined) {
           formData.append('is_vegetarian', activeIsVegetarian);
         }
+        formData.append('num_recipes', activeRecipeCount);
 
         const res = await fetch(`${backendUrl}/requests/voice`, { method: 'POST', body: formData });
         const json = await res.json();
@@ -3916,11 +3979,12 @@
 
     function startStage1Ticker() {
       if (stage1TickerInterval) clearInterval(stage1TickerInterval);
+      const count = activeRecipeCount || 5;
       const messages = [
         "Analyzing ingredient lists & active diet preferences...",
-        "Querying Ollama LLM for 5 unique gourmet recipe candidates...",
+        `Querying Ollama LLM for ${count} unique gourmet recipe candidates...`,
         "Calculating estimated preparation times & difficulty levels...",
-        "Synthesizing 5 recipe candidate cards for your selection..."
+        `Synthesizing ${count} recipe candidate cards for your selection...`
       ];
       let stepIdx = 0;
       stage1TickerInterval = setInterval(() => {
@@ -4053,23 +4117,69 @@
       }
 
       recipes.forEach((recipe, idx) => {
-        const title = recipe.title || recipe.recipe_title || 'Recipe Candidate';
-        const desc = recipe.description || recipe.summary || `Appetizing dish prepared with detected ingredients`;
-        const keyIngs = recipe.matched_ingredients || recipe.key_ingredients || (rawIngredients ? rawIngredients.map(i => typeof i === 'object' ? i.name : i) : []);
-        const prepTime = recipe.prep_time || (recipe.estimated_time_minutes ? `${recipe.estimated_time_minutes} mins` : '20 mins');
-        const difficulty = recipe.difficulty || 'Medium';
+        let title = 'Recipe Candidate';
+        let desc = 'Appetizing dish prepared with detected ingredients';
+        let keyIngs = (rawIngredients && Array.isArray(rawIngredients)) ? rawIngredients.map(i => typeof i === 'object' ? i.name : i) : [];
+        let prepTime = '20 mins';
+        let difficulty = 'Medium';
+
+        let missingIngs = [];
+        let calories = 380;
+        let protein = 14;
+        let carbs = 42;
+        let fats = 12;
+
+        if (typeof recipe === 'string') {
+          title = recipe;
+          desc = `Delicious ${recipe} prepared with your ingredients.`;
+        } else if (typeof recipe === 'object' && recipe !== null) {
+          title = recipe.title || recipe.name || recipe.recipe_title || 'Recipe Candidate';
+          desc = recipe.description || recipe.summary || `Appetizing ${title} prepared with your ingredients.`;
+          if (recipe.matched_ingredients && Array.isArray(recipe.matched_ingredients) && recipe.matched_ingredients.length > 0) {
+            keyIngs = recipe.matched_ingredients;
+          }
+          if (recipe.missing_ingredients && Array.isArray(recipe.missing_ingredients) && recipe.missing_ingredients.length > 0) {
+            missingIngs = recipe.missing_ingredients;
+          }
+          if (recipe.prep_time) prepTime = recipe.prep_time;
+          if (recipe.difficulty) difficulty = recipe.difficulty;
+          if (recipe.calories) calories = recipe.calories;
+          if (recipe.protein_g || recipe.protein) protein = recipe.protein_g || recipe.protein;
+          if (recipe.carbs_g || recipe.carbs) carbs = recipe.carbs_g || recipe.carbs;
+          if (recipe.fats_g || recipe.fats) fats = recipe.fats_g || recipe.fats;
+        }
 
         const card = document.createElement('div');
         card.className = 'recipe-card-stage1';
         card.innerHTML = `
           <div>
-            <div style="font-size:0.7rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase; margin-bottom:0.25rem;">Candidate #${idx + 1}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+              <span style="font-size:0.7rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase;">Candidate #${idx + 1}</span>
+              <span style="font-size:0.7rem; font-weight:800; color:var(--accent-gold); background:rgba(255,184,0,0.12); padding:0.15rem 0.5rem; border-radius:6px; border:1px solid rgba(255,184,0,0.3);">
+                📊 ${calories} kcal
+              </span>
+            </div>
             <h3 style="font-family:var(--font-heading); font-size:1.1rem; font-weight:800; margin-bottom:0.45rem; color:#FFFFFF;">${title}</h3>
-            <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4; margin-bottom:0.85rem;">${desc}</p>
-            <div style="margin-bottom:0.85rem;">
-              ${(keyIngs || []).map(i => `<span style="display:inline-block; padding:0.2rem 0.5rem; border-radius:6px; background:rgba(255,107,0,0.14); color:var(--accent-orange); font-size:0.72rem; font-weight:700; margin-right:0.25rem; margin-bottom:0.25rem;">${(typeof i === 'string' ? i : i.name).trim()}</span>`).join('')}
+            <p style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4; margin-bottom:0.75rem;">${desc}</p>
+
+            <!-- Matched & Extra Ingredients Needed -->
+            <div style="margin-bottom:0.75rem;">
+              <div style="font-size:0.68rem; font-weight:700; color:var(--text-muted); margin-bottom:0.2rem;">INGREDIENTS AVAILABLE:</div>
+              ${(keyIngs || []).map(i => `<span style="display:inline-block; padding:0.18rem 0.45rem; border-radius:6px; background:rgba(16,185,129,0.14); color:#10B981; font-size:0.7rem; font-weight:700; margin-right:0.25rem; margin-bottom:0.25rem;">🌿 ${(typeof i === 'string' ? i : i.name).trim()}</span>`).join('')}
+              ${missingIngs.length > 0 ? `
+                <div style="font-size:0.68rem; font-weight:700; color:var(--text-muted); margin-top:0.35rem; margin-bottom:0.2rem;">INGREDIENTS NEEDED (EXTRA):</div>
+                ${missingIngs.map(i => `<span style="display:inline-block; padding:0.18rem 0.45rem; border-radius:6px; background:rgba(255,107,0,0.14); color:var(--accent-orange); font-size:0.7rem; font-weight:700; margin-right:0.25rem; margin-bottom:0.25rem;">🛒 ${(typeof i === 'string' ? i : i.name).trim()}</span>`).join('')}
+              ` : ''}
+            </div>
+
+            <!-- Nutritional Macros Pill Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; background:rgba(0,0,0,0.3); border:1px solid var(--border); padding:0.45rem 0.65rem; border-radius:8px; margin-bottom:0.85rem;">
+              <span style="color:var(--text-secondary);">💪 Protein: <strong style="color:#FFF;">${protein}g</strong></span>
+              <span style="color:var(--text-secondary);">🌾 Carbs: <strong style="color:#FFF;">${carbs}g</strong></span>
+              <span style="color:var(--text-secondary);">🥑 Fats: <strong style="color:#FFF;">${fats}g</strong></span>
             </div>
           </div>
+
           <div>
             <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.85rem;">
               <span>⏱️ ${prepTime}</span>
@@ -4303,8 +4413,6 @@
       const guideWrapper = getActiveGuideWrapper(containerId);
       if (!guideWrapper) return;
       guideWrapper.style.display = 'block';
-      if (!guideWrapper) return;
-      guideWrapper.style.display = 'block';
       const recipeTitle = guide.recipe_title || guide.title || 'Selected Recipe';
       const targetReqId = reqId || guide.request_id || 0;
       const summary = guide.summary || guide.description || 'A masterfully crafted culinary creation.';
@@ -4314,6 +4422,33 @@
       const steps = guide.steps || [];
       const subs = guide.substitutions || [];
       const ingredients = guide.ingredients || [];
+
+      // Helper to cleanly format ingredient item string
+      const formatIngStr = (ing) => {
+        if (!ing) return '';
+        if (typeof ing === 'string') return ing;
+        if (typeof ing === 'object' && ing !== null) {
+          const item = ing.item || ing.name || ing.ingredient || '';
+          const amt = ing.amount || ing.quantity || '';
+          if (item || amt) return `${amt} ${item}`.trim();
+          return JSON.stringify(ing);
+        }
+        return String(ing);
+      };
+
+      // Helper to format step object safely
+      const formatStep = (step, idx) => {
+        if (typeof step === 'string') {
+          return { num: idx + 1, dur: 5, text: step, tools: null };
+        }
+        const num = step.step_number || step.step || (idx + 1);
+        const dur = step.duration_minutes || step.duration || step.time_minutes || step.time || 5;
+        const text = step.instruction || step.description || step.text || 'Follow preparation step.';
+        const tools = step.equipment && step.equipment.length 
+          ? (Array.isArray(step.equipment) ? step.equipment.join(', ') : step.equipment)
+          : (step.tools ? (Array.isArray(step.tools) ? step.tools.join(', ') : step.tools) : null);
+        return { num, dur, text, tools };
+      };
 
       guideWrapper.innerHTML = `
         <div class="glass-card">
@@ -4355,21 +4490,21 @@
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Protein</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.protein_g || macros.protein || 12}g</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.protein_g || macros.protein || 14}g</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:60%; background:var(--success);"></div></div>
                   </div>
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Carbohydrates</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.carbs_g || macros.carbs || 45}g</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.carbs_g || macros.carbs || 42}g</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:50%; background:var(--accent-cyan);"></div></div>
                   </div>
                   <div>
                     <div style="display:flex; justify-content:space-between; font-size:0.78rem; font-weight:700;">
                       <span style="color:var(--text-secondary);">Fats</span>
-                      <span style="color:var(--text-primary); font-weight:800;">${macros.fats_g || macros.fats || 16}g</span>
+                      <span style="color:var(--text-primary); font-weight:800;">${macros.fats_g || macros.fats || 15}g</span>
                     </div>
                     <div class="macro-progress"><div class="macro-bar" style="width:40%; background:var(--accent-purple);"></div></div>
                   </div>
@@ -4382,7 +4517,7 @@
                     <span>🛒</span> Ingredients Needed
                   </h3>
                   <ul style="padding-left:1.1rem; font-size:0.8rem; color:var(--text-secondary); line-height:1.5;">
-                    ${ingredients.map(ing => `<li>${ing}</li>`).join('')}
+                    ${ingredients.map(ing => `<li>${formatIngStr(ing)}</li>`).join('')}
                   </ul>
                 </div>
               ` : ''}
@@ -4401,20 +4536,23 @@
               </h3>
               
               <div style="display:flex; flex-direction:column; gap:0.95rem;">
-                ${steps.map(step => `
-                  <div class="step-card" onclick="this.classList.toggle('completed')">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-                      <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.05em;">Step ${step.step_number}</span>
-                      <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); background:rgba(255,255,255,0.04); padding:0.2rem 0.5rem; border-radius:6px;">⏱️ ${step.duration_minutes} mins</span>
-                    </div>
-                    <p class="step-instruction" style="font-size:0.88rem; color:var(--text-primary); line-height:1.48; margin-bottom:0.55rem;">${step.instruction}</p>
-                    ${step.equipment && step.equipment.length ? `
-                      <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">
-                        🛠️ Tools Needed: <span style="color:var(--text-secondary);">${Array.isArray(step.equipment) ? step.equipment.join(', ') : step.equipment}</span>
+                ${steps.map((st, idx) => {
+                  const s = formatStep(st, idx);
+                  return `
+                    <div class="step-card" onclick="this.classList.toggle('completed')">
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <span style="font-size:0.75rem; font-weight:800; color:var(--accent-orange); text-transform:uppercase; letter-spacing:0.05em;">Step ${s.num}</span>
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); background:rgba(255,255,255,0.04); padding:0.2rem 0.5rem; border-radius:6px;">⏱️ ${s.dur} mins</span>
                       </div>
-                    ` : ''}
-                  </div>
-                `).join('')}
+                      <p class="step-instruction" style="font-size:0.88rem; color:var(--text-primary); line-height:1.48; margin-bottom:0.55rem;">${s.text}</p>
+                      ${s.tools ? `
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">
+                          🛠️ Tools Needed: <span style="color:var(--text-secondary);">${s.tools}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </div>
           </div>

@@ -47,21 +47,21 @@ class CookingGuideWorker:
     def generate_full_cooking_guide(self, recipe_title: str) -> dict[str, Any]:
         """Generate full cooking guide with authentic ingredients, steps, timings, equipment, and macros for recipe_title."""
         prompt = f"""
-You are a master chef. Generate a complete, authentic, step-by-step cooking recipe guide specifically for the dish: '{recipe_title}'.
+You are an executive master chef and expert nutritionist. Generate a complete, authentic, step-by-step cooking recipe guide specifically for the dish: '{recipe_title}'.
 
-Generate exact ingredients with quantities, step-by-step preparation instructions, cooking times, equipment needed, and nutritional macros tailored ONLY to '{recipe_title}'. Do NOT output generic tomato/potato steps unless '{recipe_title}' actually calls for them.
+Generate exact ingredients with measurements, step-by-step preparation instructions with duration in minutes, equipment needed, and calculate authentic, dish-specific nutritional macros for '{recipe_title}'.
 
 Return a valid JSON object matching this schema:
 {{
   "title": "{recipe_title}",
   "servings": 2,
-  "prep_time": "15 mins",
-  "cook_time": "20 mins",
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 20,
   "ingredients": [
-    "1st required ingredient with quantity for {recipe_title}",
-    "2nd required ingredient with quantity for {recipe_title}",
-    "3rd required ingredient with quantity for {recipe_title}",
-    "4th required ingredient with quantity for {recipe_title}"
+    "1st required ingredient with exact quantity",
+    "2nd required ingredient with exact quantity",
+    "3rd required ingredient with exact quantity",
+    "4th required ingredient with exact quantity"
   ],
   "steps": [
     {{
@@ -84,176 +84,89 @@ Return a valid JSON object matching this schema:
     }}
   ],
   "macros": {{
-    "calories": 420,
-    "protein_g": 14.0,
-    "carbs_g": 48.0,
-    "fats_g": 16.0
+    "calories": "Calculated total calories for {recipe_title}",
+    "protein_g": "Calculated protein in grams for {recipe_title}",
+    "carbs_g": "Calculated carbs in grams for {recipe_title}",
+    "fats_g": "Calculated fats in grams for {recipe_title}"
   }},
   "substitutions": [
     "Chef pro tip or substitution suggestion for {recipe_title}"
   ]
 }}
-Do not include any intro or outro text. Return valid JSON only.
+CRITICAL RULE: Calculate real, authentic nutritional macros using your LLM model for '{recipe_title}'. Make sure "duration_minutes" is a valid integer for each step. Return valid JSON only.
 """
 
         raw_response = self._call_ollama(prompt)
         if raw_response:
             try:
-                parsed = json.loads(raw_response)
-                if isinstance(parsed, dict) and "title" in parsed and "steps" in parsed and len(parsed["steps"]) >= 1:
-                    logger.info("Successfully generated complete cooking guide via Ollama (%s) for '%s'.", self.ollama_model, recipe_title)
-                    return parsed
+                cleaned = raw_response.strip()
+                if cleaned.startswith("```json"):
+                    cleaned = cleaned[7:]
+                if cleaned.startswith("```"):
+                    cleaned = cleaned[3:]
+                if cleaned.endswith("```"):
+                    cleaned = cleaned[:-3]
+                cleaned = cleaned.strip()
+
+                parsed = json.loads(cleaned)
+                if isinstance(parsed, dict):
+                    # Ensure title is present
+                    if "title" not in parsed:
+                        parsed["title"] = recipe_title
+
+                    # Normalize macros directly from LLM output
+                    if "macros" not in parsed and "nutritional_information" in parsed:
+                        parsed["macros"] = parsed["nutritional_information"]
+                    if "macros" in parsed and isinstance(parsed["macros"], dict):
+                        m = parsed["macros"]
+                        if "calories" not in m: m["calories"] = m.get("cals", 350)
+                        if "protein_g" not in m: m["protein_g"] = m.get("protein", 15)
+                        if "carbs_g" not in m: m["carbs_g"] = m.get("carbs", 40)
+                        if "fats_g" not in m: m["fats_g"] = m.get("fats", 12)
+                    else:
+                        parsed["macros"] = {"calories": 380, "protein_g": 15, "carbs_g": 40, "fats_g": 12}
+
+                    # Normalize ingredients list (converting dict items if LLM returned dicts)
+                    if "ingredients" not in parsed or not isinstance(parsed["ingredients"], list) or not parsed["ingredients"]:
+                        parsed["ingredients"] = [f"Fresh main ingredients for {recipe_title}", "2 tbsp Butter or Olive oil", "Fresh garlic & herbs", "Salt & seasonings to taste"]
+                    else:
+                        clean_ings = []
+                        for item in parsed["ingredients"]:
+                            if isinstance(item, str):
+                                clean_ings.append(item)
+                            elif isinstance(item, dict):
+                                name = item.get("name") or item.get("item") or item.get("ingredient") or "Ingredient"
+                                amount = item.get("amount") or item.get("quantity") or ""
+                                clean_ings.append(f"{amount} {name}".strip())
+                        parsed["ingredients"] = clean_ings
+
+                    # Normalize steps (guaranteeing duration_minutes is present)
+                    if "steps" in parsed and isinstance(parsed["steps"], list) and len(parsed["steps"]) >= 1:
+                        clean_steps = []
+                        for idx, st in enumerate(parsed["steps"]):
+                            if isinstance(st, str):
+                                clean_steps.append({
+                                    "step_number": idx + 1,
+                                    "instruction": st,
+                                    "duration_minutes": 5,
+                                    "equipment": ["Kitchen Tools"]
+                                })
+                            elif isinstance(st, dict):
+                                dur = st.get("duration_minutes") or st.get("duration") or st.get("time_minutes") or st.get("time") or 5
+                                try: dur = int(dur)
+                                except Exception: dur = 5
+                                st["duration_minutes"] = dur
+                                st["step_number"] = st.get("step_number") or st.get("step") or idx + 1
+                                st["instruction"] = st.get("instruction") or st.get("description") or st.get("text") or "Follow recipe preparation step."
+                                clean_steps.append(st)
+                        parsed["steps"] = clean_steps
+                        logger.info("Successfully generated complete cooking guide via Ollama (%s) for '%s'.", self.ollama_model, recipe_title)
+                        return parsed
             except Exception as parse_err:
                 logger.warning("Could not parse JSON response from Ollama: %s", parse_err)
 
-        # Smart dynamic fallback tailored specifically to recipe_title
-        title_lower = recipe_title.lower()
-        
-        if "garlic bread" in title_lower:
-            return {
-                "title": recipe_title.title(),
-                "servings": 2,
-                "prep_time": "10 mins",
-                "cook_time": "12 mins",
-                "ingredients": [
-                    "1 French baguette or Italian loaf, halved",
-                    "4 tbsp salted butter, softened",
-                    "4 cloves garlic, finely minced",
-                    "1 tbsp fresh parsley, chopped",
-                    "1/2 cup mozzarella cheese, grated (optional)",
-                    "1/2 tsp dried oregano or Italian seasoning"
-                ],
-                "steps": [
-                    {
-                        "step_number": 1,
-                        "instruction": "Preheat oven to 375°F (190°C). Slice bread horizontally into two long halves.",
-                        "duration_minutes": 3,
-                        "equipment": ["Oven", "Bread Knife", "Baking Sheet"]
-                    },
-                    {
-                        "step_number": 2,
-                        "instruction": "In a bowl, mix softened butter, minced garlic, chopped parsley, and oregano into a spreadable garlic butter paste.",
-                        "duration_minutes": 4,
-                        "equipment": ["Mixing Bowl", "Butter Spreader / Knife"]
-                    },
-                    {
-                        "step_number": 3,
-                        "instruction": "Generously spread garlic butter over cut sides of bread. Top with grated mozzarella cheese if desired.",
-                        "duration_minutes": 2,
-                        "equipment": ["Baking Sheet"]
-                    },
-                    {
-                        "step_number": 4,
-                        "instruction": "Bake in oven for 10-12 minutes until bread is crispy and cheese is melted golden brown. Slice and serve warm.",
-                        "duration_minutes": 10,
-                        "equipment": ["Oven", "Cutting Board"]
-                    }
-                ],
-                "macros": { "calories": 340, "protein_g": 9.0, "carbs_g": 38.0, "fats_g": 16.0 },
-                "substitutions": [
-                    "Use olive oil instead of butter for a dairy-free option.",
-                    "Add chili flakes for extra spicy garlic bread."
-                ]
-            }
-        
-        if "paneer" in title_lower or "butter masala" in title_lower:
-            return {
-                "title": recipe_title.title(),
-                "servings": 2,
-                "prep_time": "15 mins",
-                "cook_time": "20 mins",
-                "ingredients": [
-                    "250g Paneer (Cottage Cheese), cut into cubes",
-                    "3 large ripe Tomatoes, pureed",
-                    "2 tbsp Butter + 1 tbsp Oil",
-                    "1 tbsp Ginger-Garlic paste",
-                    "2 tbsp Heavy Cream or Cashew paste",
-                    "1 tsp Garam Masala & Kasuri Methi",
-                    "Salt & Red Chili Powder to taste"
-                ],
-                "steps": [
-                    {
-                        "step_number": 1,
-                        "instruction": "Puree tomatoes, ginger, and garlic into a smooth puree. Cut paneer into 1-inch cubes.",
-                        "duration_minutes": 5,
-                        "equipment": ["Blender", "Knife", "Cutting Board"]
-                    },
-                    {
-                        "step_number": 2,
-                        "instruction": "Melt butter with oil in a pan. Add ginger-garlic paste and tomato puree; cook until oil separates.",
-                        "duration_minutes": 7,
-                        "equipment": ["Pan / Kadhai", "Spatula"]
-                    },
-                    {
-                        "step_number": 3,
-                        "instruction": "Add chili powder, garam masala, and salt. Stir in cream or cashew paste to form a rich velvety gravy.",
-                        "duration_minutes": 3,
-                        "equipment": ["Pan / Kadhai"]
-                    },
-                    {
-                        "step_number": 4,
-                        "instruction": "Add paneer cubes, simmer gently for 5 minutes, sprinkle crushed kasuri methi, and serve hot with naan.",
-                        "duration_minutes": 5,
-                        "equipment": ["Pan / Kadhai", "Serving Dish"]
-                    }
-                ],
-                "macros": { "calories": 420, "protein_g": 16.0, "carbs_g": 18.0, "fats_g": 32.0 },
-                "substitutions": [
-                    "Substitute Paneer with Tofu for a vegan version.",
-                    "Use soaked cashew paste instead of heavy cream for rich texture."
-                ]
-            }
-
-        # Generic dynamic fallback for any other dish title
-        words = [w.strip().title() for w in recipe_title.split() if len(w) > 2]
-        dish_name = recipe_title.title()
-        main_component = words[0] if words else "Main Ingredient"
-        sec_component = words[1] if len(words) > 1 else "Seasoning"
-
-        return {
-            "title": dish_name,
-            "servings": 2,
-            "prep_time": "15 mins",
-            "cook_time": "20 mins",
-            "ingredients": [
-                f"Fresh {main_component} (main ingredient for {dish_name})",
-                f"Fresh {sec_component} & seasonings",
-                "2 tbsp Butter or Olive oil",
-                "Minced garlic & fresh herbs",
-                "Salt & pepper to taste"
-            ],
-            "steps": [
-                {
-                    "step_number": 1,
-                    "instruction": f"Prepare fresh ingredients for {dish_name}. Wash, slice, and measure out key components.",
-                    "duration_minutes": 5,
-                    "equipment": ["Cutting board", "Chef knife"]
-                },
-                {
-                    "step_number": 2,
-                    "instruction": f"Heat pan over medium flame with butter or oil. Sauté garlic and aromatics until fragrant.",
-                    "duration_minutes": 4,
-                    "equipment": ["Skillet / Pan", "Spatula"]
-                },
-                {
-                    "step_number": 3,
-                    "instruction": f"Add {main_component.lower()} and seasonings to pan. Cook gently over medium flame to infuse flavors.",
-                    "duration_minutes": 8,
-                    "equipment": ["Skillet / Pan"]
-                },
-                {
-                    "step_number": 4,
-                    "instruction": f"Simmer {dish_name} until cooked to perfection. Garnish with fresh herbs and serve warm.",
-                    "duration_minutes": 3,
-                    "equipment": ["Serving Dish"]
-                }
-            ],
-            "macros": { "calories": 390, "protein_g": 14.0, "carbs_g": 40.0, "fats_g": 15.0 },
-            "substitutions": [
-                "Adjust chili powder or black pepper for desired heat level.",
-                "Substitute butter with olive oil or ghee according to preference."
-            ]
-        }
+        logger.error("Ollama LLM model failed to return valid cooking guide JSON for '%s'.", recipe_title)
+        return {}
 
     def process_cooking_guide_task(self, payload: dict[str, Any], db: Session) -> bool:
         """Consume RabbitMQ task, generate full cooking guide for selected recipe, and update DB."""

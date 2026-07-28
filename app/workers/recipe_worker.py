@@ -1,4 +1,5 @@
 import json
+import re
 import urllib.request
 from typing import Any
 
@@ -13,310 +14,212 @@ logger = get_logger(__name__)
 
 
 class LLMRecipeWorker:
-    """Worker handling Stage 1 (5 candidate recipe options) and Stage 2 (full cooking guide) via Ollama / LLM."""
+    """Simple Ollama recipe generator based on user ingredients, cuisine, dietary tag, and recipe count."""
 
-    def __init__(self) -> None:
+    def __init__(self, model_name: str = settings.OLLAMA_MODEL) -> None:
         self.ollama_url = f"{settings.OLLAMA_BASE_URL}/api/generate"
-        self.ollama_model = settings.OLLAMA_MODEL
+        self.model = model_name
+        logger.info(f"Initialized LLMRecipeWorker with model: {self.model}")
 
-    def _call_ollama(self, prompt: str) -> str | None:
-        """Helper to invoke local Ollama LLM endpoint over HTTP POST."""
+    def generate_recipes(
+        self,
+        ingredients: list[str] | str,
+        cuisine: str | None = "Any",
+        is_vegetarian: bool | str | None = None,
+        num_recipes: int = 5,
+    ) -> list[Any]:
+        """Given a list of ingredients, cuisine, dietary tag, and count, return recipe recommendations from Ollama LLM."""
+        if isinstance(ingredients, list):
+            ingredients_str = ", ".join(ingredients)
+        else:
+            ingredients_str = str(ingredients)
+
+        cuisine_str = cuisine.title() if cuisine else "Any"
+
+        # Format dietary requirement
+        if isinstance(is_vegetarian, str):
+            is_veg = is_vegetarian.lower() == "true"
+        elif is_vegetarian is not None:
+            is_veg = bool(is_vegetarian)
+        else:
+            is_veg = None
+
+        if is_veg is True:
+            diet_rule = "VEGETARIAN ONLY (No chicken, meat, beef, pork, mutton, fish, seafood, or eggs)"
+        elif is_veg is False:
+            diet_rule = "NON-VEGETARIAN (Include chicken, meat, fish, or eggs)"
+        else:
+            diet_rule = "ANY"
+
+        logger.info(f"Generating {num_recipes} recipes for cuisine '{cuisine_str}' (Diet: {diet_rule}) with ingredients: {ingredients_str}")
+
+        prompt = f"""
+        You are a professional executive chef.
+        I have the following ingredients: {ingredients_str}.
+        Cuisine preference: {cuisine_str}.
+        Dietary requirement: {diet_rule}.
+        NUMBER OF RECIPES REQUIRED: EXACTLY {num_recipes} RECIPES.
+
+        Return ONLY a raw JSON array matching this format:
+        [
+          {{
+            "title": "Recipe Name 1",
+            "description": "Appetizing 1-sentence description",
+            "prep_time": "15 mins",
+            "matched_ingredients": ["ingredients used"],
+            "missing_ingredients": ["extra staple ingredients needed"]
+          }}
+        ]
+
+        CRITICAL RULE: Return EXACTLY {num_recipes} distinct recipe objects in the JSON array. No markdown, no extra text.
+        """
+
         payload = {
-            "model": self.ollama_model,
+            "model": self.model,
             "prompt": prompt,
             "stream": False,
             "format": "json",
         }
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            self.ollama_url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
 
         try:
-            with urllib.request.urlopen(req, timeout=60) as response:
+            data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                self.ollama_url,
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=120) as response:
                 if response.status == 200:
                     resp_body = json.loads(response.read().decode("utf-8"))
-                    return resp_body.get("response")
+                    full_response = resp_body.get("response", "")
+                else:
+                    full_response = ""
         except Exception as e:
-            logger.warning("Ollama service call to %s failed (%s). Using local fallback.", self.ollama_url, e)
-        return None
+            logger.error(f"Request to Ollama API failed: {e}")
+            full_response = ""
+
+        # Extract JSON array using outer bracket matching (first [ and last ])
+        recipes = []
+        if full_response:
+            try:
+                cleaned = full_response.strip()
+                if cleaned.startswith("```json"):
+                    cleaned = cleaned[7:]
+                if cleaned.startswith("```"):
+                    cleaned = cleaned[3:]
+                if cleaned.endswith("```"):
+                    cleaned = cleaned[:-3]
+                cleaned = cleaned.strip()
+
+                start_idx = cleaned.find("[")
+                end_idx = cleaned.rfind("]")
+
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    json_str = cleaned[start_idx : end_idx + 1]
+                    try:
+                        recipes = json.loads(json_str)
+                    except json.JSONDecodeError:
+                        # Fix trailing commas
+                        json_str = re.sub(r",\s*]", "]", json_str)
+                        json_str = re.sub(r",\s*}", "}", json_str)
+                        recipes = json.loads(json_str)
+                else:
+                    # Direct JSON parse attempt if no outer brackets matched
+                    parsed = json.loads(cleaned)
+                    if isinstance(parsed, list):
+                        recipes = parsed
+                    elif isinstance(parsed, dict) and "recipes" in parsed and isinstance(parsed["recipes"], list):
+                        recipes = parsed["recipes"]
+            except Exception as err:
+                logger.error(f"Could not parse JSON from Ollama response: {err}")
+
+        # Normalize string array or dict items into rich recipe objects for UI rendering
+        formatted_recipes = []
+        ing_list = ingredients if isinstance(ingredients, list) else [str(ingredients)]
+        for r in recipes[:num_recipes]:
+            if isinstance(r, str):
+                formatted_recipes.append({
+                    "title": r.strip(),
+                    "description": f"Delicious {r.strip()} prepared with your ingredients.",
+                    "prep_time": "15-20 mins",
+                    "matched_ingredients": ing_list,
+                    "missing_ingredients": ["spices", "oil"]
+                })
+            elif isinstance(r, dict):
+                if "title" not in r or not r["title"]:
+                    r["title"] = r.get("name") or r.get("recipe_title") or "Gourmet Dish"
+                if "description" not in r or not r["description"]:
+                    r["description"] = f"Appetizing {r['title']} prepared with your ingredients."
+                formatted_recipes.append(r)
+
+        # Guarantee exact requested count (top-up if LLM generated fewer than requested num_recipes)
+        styles = [
+            "Gourmet Skillet Roast", "Aromatic Pan-Seared Medley", "Herb-Infused Delight",
+            "Crispy Golden Bowl", "Special Chef's Curry", "Sautéed Garden Platter",
+            "Slow-Cooked Casserole", "Spiced Sizzle Bake", "Velvety Cream Stew",
+            "Zesty Roasted Dish"
+        ]
+        main_ing = ing_list[0].title() if ing_list else "Ingredient"
+
+        while len(formatted_recipes) < num_recipes:
+            idx = len(formatted_recipes)
+            style_name = styles[idx % len(styles)]
+            title = f"{main_ing} {style_name}"
+            formatted_recipes.append({
+                "title": title,
+                "description": f"A delightful {title.lower()} prepared with {', '.join(ing_list)}.",
+                "prep_time": "15-20 mins",
+                "matched_ingredients": ing_list,
+                "missing_ingredients": ["olive oil", "herbs"]
+            })
+
+        logger.info(f"Generated exactly {len(formatted_recipes)} recipes for user request.")
+        return formatted_recipes[:num_recipes]
 
     def generate_stage1_options(
         self,
         ingredients: list[str],
         cuisine: str | None = None,
         is_vegetarian: bool | None = None,
-    ) -> list[dict[str, Any]]:
-        """Stage 1: Generate 5 distinct recipe options using Ollama local LLM with dietary constraints."""
-        # Filter out non-edible items (pets, humans, objects)
-        non_edible_terms = {
-            "person", "dog", "cat", "pet", "human", "bicycle", "car", "sports ball", "ball",
-            "laptop", "cell phone", "phone", "chair", "couch", "bed", "tv", "refrigerator",
-            "bottle", "cup", "fork", "knife", "spoon", "bowl", "book", "clock"
-        }
-        
-        raw_ings = ingredients if isinstance(ingredients, list) else [str(ingredients)]
-        clean_ings = [i for i in raw_ings if i.lower().strip() not in non_edible_terms]
-        if not clean_ings:
-            clean_ings = ["Tomatoes", "Potatoes", "Bell Pepper", "Garlic"]
-
-        ing_list_str = ", ".join(clean_ings)
-        cuisine_str = f" {cuisine}" if cuisine else ""
-
-        diet_instruction = ""
-        if is_vegetarian is True:
-            diet_instruction = "\nDIETARY CONSTRAINT: STRICTLY VEGETARIAN ONLY! All 5 recipes MUST be 100% vegetarian. Do NOT include chicken, meat, beef, pork, mutton, fish, seafood, or eggs in any recipe!"
-        elif is_vegetarian is False:
-            diet_instruction = "\nDIETARY PREFERENCE: Non-Vegetarian allowed."
-
-        prompt = f"""
-You are an expert culinary chef. The user input is: [{ing_list_str}] and target cuisine preference:{cuisine_str if cuisine_str else ' Any'}.{diet_instruction}
-
-SAFETY RULE: You are a professional chef. ONLY generate recipes using 100% edible food ingredients (vegetables, meats, dairy, spices, grains). NEVER generate recipes containing pets, humans, or non-edible objects (e.g. dog, cat, person, bicycle, ball). If non-food terms appear, ignore them completely and replace them with standard cooking ingredients like tomatoes, potatoes, onions, or garlic.
-
-Note: The user input may contain a list of raw ingredients OR a specific dish/recipe name (e.g. 'Paneer Butter Masala', 'Garlic Bread').
-- If the input is a list of ingredients, generate 5 distinct recipes utilizing those ingredients.
-- If the input is a specific recipe name, generate 5 delicious gourmet variations/styles of that dish (e.g. Classic, Restaurant-Style, Quick 15-Min, Smoky Tandoori, Creamy Garlic).
-
-Return a JSON array containing EXACTLY 5 recipe objects with the following schema:
-[
-  {{
-    "title": "Recipe Name",
-    "description": "Short appetizing description",
-    "prep_time": "15-20 mins",
-    "matched_ingredients": ["list of key ingredients"],
-    "missing_ingredients": ["extra staple ingredients required"]
-  }}
-]
-Do not include any extra commentary. Output pure valid JSON.
-"""
-
-        raw_response = self._call_ollama(prompt)
-        if raw_response:
-            try:
-                parsed = json.loads(raw_response)
-                if isinstance(parsed, list) and len(parsed) >= 1:
-                    logger.info("Successfully generated %s recipes via Ollama (%s).", len(parsed), self.ollama_model)
-                    return parsed[:5]
-                elif isinstance(parsed, dict) and "recipes" in parsed:
-                    return parsed["recipes"][:5]
-            except Exception as parse_err:
-                logger.warning("Could not parse Ollama JSON response: %s", parse_err)
-
-        # Fallback generator: Return 5 customized recipe options based on dietary choice
-        c_prefix = f"{cuisine.title()} " if cuisine else ""
-        
-        # Filter non-veg keywords if vegetarian requested
-        non_veg_terms = {"chicken", "mutton", "beef", "pork", "fish", "prawn", "seafood", "egg", "meat"}
-        if is_vegetarian:
-            clean_ings = [i for i in clean_ings if i.lower().strip() not in non_veg_terms]
-            if not clean_ings:
-                clean_ings = ["Paneer", "Tomatoes", "Garlic", "Butter"]
-
-        main_ing = clean_ings[0].title() if clean_ings else "Vegetable"
-        sec_ing = clean_ings[1].title() if len(clean_ings) > 1 else "Herbs"
-        third_ing = clean_ings[2].title() if len(clean_ings) > 2 else "Spices"
-
-        if is_vegetarian:
-            return [
-                {
-                    "title": f"{c_prefix}Garlic Butter {main_ing} & {sec_ing}",
-                    "description": f"A rich, comforting vegetarian dish combining sautéed {main_ing.lower()} and {sec_ing.lower()} in melted butter.",
-                    "prep_time": "15 mins",
-                    "matched_ingredients": clean_ings,
-                    "missing_ingredients": ["garlic", "black pepper", "herbs"],
-                },
-                {
-                    "title": f"Rustic {c_prefix}{main_ing} {third_ing} Curry / Stew",
-                    "description": f"Traditional hearty vegetarian dish simmering {main_ing.lower()} with aromatic spices and herbs.",
-                    "prep_time": "20 mins",
-                    "matched_ingredients": clean_ings,
-                    "missing_ingredients": ["onion", "cumin", "salt"],
-                },
-                {
-                    "title": f"{c_prefix}Pan-Seared {main_ing} with Golden {third_ing}",
-                    "description": f"Sizzling skillet vegetarian meal pan-seared to perfection.",
-                    "prep_time": "25 mins",
-                    "matched_ingredients": clean_ings,
-                    "missing_ingredients": ["olive oil", "lemon juice"],
-                },
-                {
-                    "title": f"Creamy {c_prefix}{sec_ing} & {main_ing} Bake",
-                    "description": f"Oven-baked vegetarian casserole layering tender {sec_ing.lower()} and rich flavors.",
-                    "prep_time": "30 mins",
-                    "matched_ingredients": clean_ings,
-                    "missing_ingredients": ["cream", "cheese"],
-                },
-                {
-                    "title": f"{c_prefix}Crispy Roasted {main_ing} Bowl",
-                    "description": f"Healthy vegetarian bowl featuring roasted {main_ing.lower()} served with light herbs.",
-                    "prep_time": "15 mins",
-                    "matched_ingredients": clean_ings,
-                    "missing_ingredients": ["sea salt", "parsley"],
-                },
-            ]
-        else:
-            return [
-                {
-                    "title": f"{c_prefix}Garlic Butter {main_ing} & {sec_ing}",
-                    "description": f"A rich, comforting dish combining sautéed {main_ing.lower()} and {sec_ing.lower()} in melted butter.",
-                    "prep_time": "15 mins",
-                    "matched_ingredients": ingredients,
-                    "missing_ingredients": ["garlic", "black pepper", "herbs"],
-                },
-                {
-                    "title": f"Rustic {c_prefix}{main_ing} {third_ing} Curry / Stew",
-                    "description": f"Traditional hearty dish simmering {main_ing.lower()} with aromatic spices and herbs.",
-                    "prep_time": "20 mins",
-                    "matched_ingredients": ingredients,
-                    "missing_ingredients": ["onion", "cumin", "salt"],
-                },
-                {
-                    "title": f"{c_prefix}Pan-Seared {main_ing} with Golden {third_ing}",
-                    "description": f"Sizzling skillet meal pan-seared to perfection.",
-                    "prep_time": "25 mins",
-                    "matched_ingredients": ingredients,
-                    "missing_ingredients": ["olive oil", "lemon juice"],
-                },
-                {
-                    "title": f"Creamy {c_prefix}{sec_ing} & {main_ing} Bake",
-                    "description": f"Oven-baked casserole layering tender {sec_ing.lower()} and rich flavors.",
-                    "prep_time": "30 mins",
-                    "matched_ingredients": ingredients,
-                    "missing_ingredients": ["cream", "cheese"],
-                },
-                {
-                    "title": f"{c_prefix}Crispy Roasted {main_ing} Bowl",
-                    "description": f"Healthy bowl featuring roasted {main_ing.lower()} served with light herbs.",
-                    "prep_time": "15 mins",
-                    "matched_ingredients": ingredients,
-                    "missing_ingredients": ["sea salt", "parsley"],
-                },
-            ]
-
-    def generate_stage2_guide(self, recipe_title: str) -> dict[str, Any]:
-        """Stage 2: Generate detailed step-by-step cooking guide using Ollama / structured fallback."""
-        prompt = f"""
-You are a master chef. Generate a complete step-by-step cooking guide for the recipe titled '{recipe_title}'.
-Return a valid JSON object matching this schema:
-{{
-  "title": "{recipe_title}",
-  "servings": 2,
-  "prep_time": "15 mins",
-  "cook_time": "20 mins",
-  "ingredients": ["list of ingredients with exact measurements"],
-  "steps": [
-    {{
-      "step_number": 1,
-      "instruction": "Detailed step instruction",
-      "duration_minutes": 5,
-      "equipment": ["Tools needed"]
-    }}
-  ],
-  "macros": {{
-    "calories": 380,
-    "protein_g": 8.5,
-    "carbs_g": 42.0,
-    "fats_g": 18.0
-  }},
-  "substitutions": ["Ingredient substitution suggestions"]
-}}
-Do not include any intro or outro text. Return valid JSON only.
-"""
-        raw_response = self._call_ollama(prompt)
-        if raw_response:
-            try:
-                parsed = json.loads(raw_response)
-                if isinstance(parsed, dict) and "title" in parsed and "steps" in parsed:
-                    logger.info("Successfully generated complete cooking guide via Ollama (%s) for '%s'.", self.ollama_model, recipe_title)
-                    return parsed
-            except Exception as parse_err:
-                logger.warning("Could not parse JSON response from Ollama: %s", parse_err)
-
-        # Fallback detailed cooking guide tailored to recipe_title
-        words = [w.strip() for w in recipe_title.split() if len(w) > 3]
-        dish_name = recipe_title.title()
-        main_component = words[0] if words else "Ingredients"
-
-        return {
-            "title": dish_name,
-            "servings": 2,
-            "prep_time": "15 mins",
-            "cook_time": "20 mins",
-            "ingredients": [
-                f"Fresh {main_component} (main ingredient)",
-                "Aromatic spices & seasonings",
-                "2 tbsp Cooking butter or oil",
-                "Fresh garlic & herbs",
-                "Salt & pepper to taste",
-            ],
-            "steps": [
-                {
-                    "step_number": 1,
-                    "instruction": f"Prepare fresh ingredients for {dish_name}. Wash, chop, and mince all key components.",
-                    "duration_minutes": 5,
-                    "equipment": ["Cutting board", "Chef knife"],
-                },
-                {
-                    "step_number": 2,
-                    "instruction": "Heat skillet or cooking pot over medium flame with butter or oil. Sauté aromatics until fragrant.",
-                    "duration_minutes": 4,
-                    "equipment": ["Skillet / Pan", "Spatula"],
-                },
-                {
-                    "step_number": 3,
-                    "instruction": f"Combine {main_component.lower()} and seasonings. Cook gently, stirring occasionally to infuse rich flavors.",
-                    "duration_minutes": 8,
-                    "equipment": ["Skillet / Pan"],
-                },
-                {
-                    "step_number": 4,
-                    "instruction": f"Simmer {dish_name} until perfectly cooked and tender. Garnish with fresh herbs and serve warm.",
-                    "duration_minutes": 3,
-                    "equipment": ["Serving plate / Bowl"],
-                },
-            ],
-            "macros": {
-                "calories": 410,
-                "protein_g": 14.5,
-                "carbs_g": 45.0,
-                "fats_g": 16.0,
-            },
-            "substitutions": [
-                "Substitute butter with olive oil or ghee according to preference.",
-                "Adjust chili powder or black pepper for desired heat level.",
-            ],
-        }
+        num_recipes: int = 5,
+    ) -> list[Any]:
+        """Alias for backward compatibility with service calls."""
+        return self.generate_recipes(
+            ingredients=ingredients,
+            cuisine=cuisine,
+            is_vegetarian=is_vegetarian,
+            num_recipes=num_recipes,
+        )
 
     def process_recipe_task(self, payload: dict[str, Any], db: Session) -> bool:
-        """Process a Stage 1 candidate 5-recipe generation task."""
+        """Process DB task and store results."""
         request_id = payload.get("request_id")
         ingredients = payload.get("ingredients", [])
         cuisine = payload.get("cuisine")
         is_vegetarian = payload.get("is_vegetarian")
+        num_recipes = payload.get("num_recipes") or payload.get("count") or 5
 
-        # Parse ingredients if passed as string or raw text fallback
-        if isinstance(ingredients, str):
-            ingredients = [item.strip() for item in ingredients.split(",") if item.strip()]
-        elif not ingredients:
+        if not ingredients:
             raw_text = payload.get("raw_text_input") or payload.get("text")
-            if raw_text and isinstance(raw_text, str):
-                ingredients = [item.strip() for item in raw_text.split(",") if item.strip()]
+            if raw_text:
+                ingredients = [item.strip() for item in str(raw_text).split(",") if item.strip()]
 
         if not request_id:
-            logger.error("Invalid payload missing request_id: %s", payload)
+            logger.error("Missing request_id in payload")
             return False
 
         req_repo = RequestRepository(db)
         out_repo = RequestOutputRepository(db)
 
-        # 1. Generate 5 Stage 1 candidate recipe options using Ollama
-        options = self.generate_stage1_options(ingredients, cuisine=cuisine, is_vegetarian=is_vegetarian)
+        # Call simple LLM recipe generator
+        options = self.generate_recipes(
+            ingredients=ingredients,
+            cuisine=cuisine,
+            is_vegetarian=is_vegetarian,
+            num_recipes=num_recipes,
+        )
 
-        # 2. Update RequestOutput with candidate options payload
         existing_output = out_repo.get_by_request_id(request_id)
         if existing_output and existing_output.ingredients:
             if isinstance(existing_output.ingredients, dict) and "detected" in existing_output.ingredients:
@@ -334,36 +237,26 @@ Do not include any intro or outro text. Return valid JSON only.
                 ingredients={"detected": ingredients, "recipes": options},
             )
 
-        # 3. Update Request status to COMPLETED
         req_repo.update_status(request_id=request_id, status=RequestStatus.COMPLETED)
-
-        logger.info("Successfully generated %s recipes for Request #%s (Cuisine: %s, Veg: %s)", len(options), request_id, cuisine or 'Any', is_vegetarian)
+        logger.info("Successfully completed request #%s with %s recipes", request_id, len(options))
         return True
 
-    def process_guide_task(self, payload: dict[str, Any], db: Session) -> bool:
-        """Process a Stage 2 full cooking guide generation task."""
-        request_id = payload.get("request_id")
-        selected_recipe = payload.get("selected_recipe")
 
-        if not request_id or not selected_recipe:
-            logger.error("Invalid payload missing request_id or selected_recipe: %s", payload)
-            return False
+if __name__ == "__main__":
+    import sys
 
-        out_repo = RequestOutputRepository(db)
-        req_repo = RequestRepository(db)
+    if sys.platform == "win32":
+        sys.stdout.reconfigure(encoding="utf-8")
 
-        # 1. DB CACHE LOOKUP: Check if recipe guide for this dish name already exists in PostgreSQL
-        cached_guide = req_repo.find_existing_cooking_guide(selected_recipe)
-        if cached_guide:
-            logger.info("⚡ CACHE HIT! Found existing cooking guide in DB for '%s'. Skipping LLM call!", selected_recipe)
-            guide = cached_guide
+    generator = LLMRecipeWorker()
+    ingredients_list = ["tomato", "onion", "garlic"]
+    desired_cuisine = "Indian"
+
+    recipes = generator.generate_recipes(ingredients_list, desired_cuisine, is_vegetarian=True, num_recipes=5)
+
+    print(f"\n🍽 Suggested {desired_cuisine} Recipes:")
+    for i, r in enumerate(recipes, start=1):
+        if isinstance(r, dict):
+            print(f"{i}. {r.get('title')} - {r.get('description')}")
         else:
-            logger.info("🤖 CACHE MISS! Generating cooking guide via LLM for '%s'...", selected_recipe)
-            guide = self.generate_stage2_guide(selected_recipe)
-
-        # 2. Update RequestOutput with cooking guide
-        out_repo.upsert_output(request_id=request_id, cooking_guide=guide)
-
-        logger.info("Successfully generated cooking guide for '%s' (Request #%s)", selected_recipe, request_id)
-        return True
-
+            print(f"{i}. {r}")

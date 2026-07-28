@@ -98,6 +98,13 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   # 6b. One-shot Model Puller for Ollama
   ollama-model-setup:
@@ -190,6 +197,13 @@ services:
         condition: service_healthy
       ollama:
         condition: service_started
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   # 9. Web Frontend UI & Reverse Proxy Gateway
   nginx:

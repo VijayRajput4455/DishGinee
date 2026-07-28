@@ -79,7 +79,13 @@ def run_full_system_test():
 
         # Retrieve candidate recipes from database
         details_after_stage1 = service.get_request_details(request_id)
-        candidate_recipes = details_after_stage1.output.ingredients
+        raw_output_ing = details_after_stage1.output.ingredients
+        if isinstance(raw_output_ing, dict):
+            candidate_recipes = raw_output_ing.get("recipes", [])
+        elif isinstance(raw_output_ing, list):
+            candidate_recipes = raw_output_ing
+        else:
+            candidate_recipes = []
 
         print(f"  └─ Generated {len(candidate_recipes)} Candidate Recipes:")
         for idx, recipe in enumerate(candidate_recipes, 1):
