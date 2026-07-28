@@ -96,6 +96,23 @@ class MinIOService:
                 print(f"[MinIOService] Error downloading object '{clean_key}': {e}")
         return None
 
+    def download_file_by_url(self, url: str) -> bytes | None:
+        """Extract object key from storage URL or minio URI and download file bytes."""
+        if not url:
+            return None
+        clean_key = (
+            url.replace(f"minio://{self.bucket_name}/", "")
+            .replace(f"http://minio:9000/{self.bucket_name}/", "")
+            .replace(f"http://localhost:9000/{self.bucket_name}/", "")
+            .replace(f"http://127.0.0.1:9000/{self.bucket_name}/", "")
+            .replace("minio://", "")
+            .replace(f"{self.bucket_name}/", "")
+            .lstrip("/")
+        )
+        if "?" in clean_key:
+            clean_key = clean_key.split("?")[0]
+        return self.download_file(clean_key)
+
     def get_presigned_url(self, object_name: str, expires_seconds: int = 3600) -> str:
         """Generate client access URL for MinIO storage objects.
         

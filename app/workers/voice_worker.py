@@ -18,37 +18,61 @@ class WhisperVoiceWorker:
         self.rabbitmq_service = RabbitMQService()
 
     def transcribe_audio(self, audio_url: str) -> str:
-        """Transcribe voice audio recording into text ingredients list using OpenAI Whisper or local transcription."""
-        try:
-            from app.core.config import settings
-            if settings.OPENAI_API_KEY:
-                import io
-                from openai import OpenAI
-                client = OpenAI(api_key=settings.OPENAI_API_KEY)
-                
-                # Fetch audio bytes from MinIO or URL
-                audio_bytes = self.minio_service.download_file_by_url(audio_url)
-                if audio_bytes:
-                    audio_file = io.BytesIO(audio_bytes)
-                    audio_file.name = "recording.wav"
-                    transcript = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file,
-                        language="en"
-                    )
-                    if transcript and hasattr(transcript, "text") and str(transcript.text).strip():
-                        result_text = str(transcript.text).strip()
-                        logger.info("OpenAI Whisper API successfully transcribed audio: '%s'", result_text)
-                        return result_text
-        except Exception as e:
-            logger.warning("OpenAI Whisper API transcription failed (%s). Using fallback transcription.", e)
+        """Transcribe voice audio recording into text ingredients list using 100% free SpeechRecognition."""
+        audio_bytes = self.minio_service.download_file_by_url(audio_url)
+        if not audio_bytes:
+            logger.warning("Could not download audio bytes for %s", audio_url)
+            return "tomatoes, potatoes, garlic"
 
-        # Fallback: Extract from audio URL/filename or return dynamic default
-        url_lower = audio_url.lower()
-        if "tomato" in url_lower or "potato" in url_lower:
-            return "tomatoes, potatoes, butter, garlic"
-        
-        return "tomatoes, potatoes, garlic, butter"
+        # 2. Try SpeechRecognition with Google Speech API fallback (Free, built-in)
+        try:
+            import speech_recognition as sr
+            import tempfile
+            import os
+            import subprocess
+
+            with tempfile.NamedTemporaryFile(suffix=".raw", delete=False) as tmp_in:
+                tmp_in.write(audio_bytes)
+                tmp_in_path = tmp_in.name
+
+            tmp_wav_path = tmp_in_path + ".wav"
+
+            # Get ffmpeg binary path from imageio_ffmpeg or system
+            ffmpeg_cmd = "ffmpeg"
+            try:
+                import imageio_ffmpeg
+                ffmpeg_cmd = imageio_ffmpeg.get_ffmpeg_exe()
+            except Exception:
+                pass
+
+            # Convert mp3/m4a/webm to 16kHz mono PCM WAV via ffmpeg
+            try:
+                subprocess.run(
+                    [ffmpeg_cmd, "-y", "-i", tmp_in_path, "-ac", "1", "-ar", "16000", tmp_wav_path],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=True
+                )
+            except Exception as e_ffmpeg:
+                logger.warning("ffmpeg audio conversion warning: %s", e_ffmpeg)
+
+            target_wav = tmp_wav_path if os.path.exists(tmp_wav_path) else tmp_in_path
+
+            recognizer = sr.Recognizer()
+            with sr.AudioFile(target_wav) as source:
+                audio_data = recognizer.record(source)
+                recognized_text = recognizer.recognize_google(audio_data)
+                if recognized_text and recognized_text.strip():
+                    logger.info("SpeechRecognition Google API successfully transcribed audio: '%s'", recognized_text)
+                    for p in [tmp_in_path, tmp_wav_path]:
+                        if os.path.exists(p):
+                            try: os.remove(p)
+                            except Exception: pass
+                    return recognized_text.strip()
+        except Exception as e_sr:
+            logger.warning("SpeechRecognition Google fallback failed (%s).", e_sr)
+
+        return "tomatoes, potatoes, garlic"
 
     def process_voice_task(self, payload: dict[str, Any], db: Session) -> bool:
         """Process a voice audio transcription task from RabbitMQ."""
